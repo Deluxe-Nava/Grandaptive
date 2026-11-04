@@ -110,7 +110,7 @@ grandaptive/
 ├── .gitignore
 ├── README.md
 └── package.json                    # Workspace scripts (npm / pnpm / yarn)
-
+```
 ## Team
 
 - Abril Odette Jiménez Sánchez

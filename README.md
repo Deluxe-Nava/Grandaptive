@@ -65,6 +65,52 @@ The technology stack and AI provider are pending selection.
 
 Installation instructions, environment configuration, and demo links will be added when a runnable version is available.
 
+## Arquitecture
+```text
+grandaptive/
+├── apps/
+│   ├── frontend/                   # Aplicación PWA (React + Vite + TypeScript)
+│   │   ├── public/                 # Iconos PWA, manifest.json, service worker
+│   │   ├── src/
+│   │   │   ├── assets/             # Apoyos visuales, pictogramas e iconos
+│   │   │   ├── components/         # Componentes UI de accesibilidad
+│   │   │   │   ├── common/         # Botones, modals, switches accesibles
+│   │   │   │   ├── journal/        # Editor libre, tarjetas de acompañamiento
+│   │   │   │   ├── assistant/      # Asistente de comunicación y 3 columnas
+│   │   │   │   ├── profile/        # Tarjetas de patrón aceptado/rechazado
+│   │   │   │   └── settings/       # Paneles de control N1 e interfaz
+│   │   │   ├── context/            # Proveedores de estado (UI Settings, Auth)
+│   │   │   ├── hooks/              # Custom hooks (useJournal, useAIEngine, useAccessibility)
+│   │   │   ├── pages/              # Vistas principales (Diario, Asistente, Perfil, Ajustes)
+│   │   │   ├── services/           # Cliente API HTTP (Axios/Fetch con retry offline)
+│   │   │   ├── store/              # Estado global persistente (Zustand)
+│   │   │   ├── styles/             # Temas de contraste, fuentes y tokens accesibles
+│   │   │   ├── types/              # Tipos TypeScript compartidos o del Frontend
+│   │   │   ├── App.tsx
+│   │   │   └── main.tsx
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   │
+│   └── backend/                    # API REST, Seguridad & Motor de IA
+│       ├── prisma/                 # Migraciones y esquema PostgreSQL + RLS
+│       │   └── schema.prisma
+│       ├── src/
+│       │   ├── config/             # Variables de entorno y SDKs
+│       │   ├── middlewares/        # Auth JWT, Privacy Layers, Safety Guardrails
+│       │   ├── modules/            # Módulos de dominio (Auth, Diario, Perfil, Privacidad)
+│       │   ├── ai_engine/          # Engine de 3 niveles, Prompts y Safety Pause
+│       │   ├── utils/              # Encriptación, sanitizadores de texto
+│       │   ├── app.ts
+│       │   └── server.ts
+│       ├── tests/                  # Banco de pruebas de comportamiento de IA
+│       ├── package.json
+│       └── tsconfig.json
+│
+├── docs/                           # PRD, Guías de diseño y arquitectura
+├── .gitignore
+├── README.md
+└── package.json                    # Workspace scripts (npm / pnpm / yarn)
+
 ## Team
 
 - Abril Odette Jiménez Sánchez

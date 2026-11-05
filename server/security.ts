@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import type { Session } from '@supabase/supabase-js';
 import { z } from 'zod';
 
@@ -21,6 +21,7 @@ export interface Config {
   aiDailyLimit: number;
   aiGlobalDailyLimit: number;
   captchaConfigured: boolean;
+  monitorToken?: string;
 }
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -42,14 +43,21 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     (!production && !['https:', 'http:'].includes(origin.protocol))) {
     throw new ApiError(503, 'BACKEND_NOT_CONFIGURED', 'Revisa la configuración del backend.');
   }
-  if (e.AI_MODE === 'openai' && (!env.OPENAI_API_KEY || env.OPENAI_MODEL !== 'gpt-5.4-mini')) throw new ApiError(503, 'AI_NOT_CONFIGURED', 'Falta configurar OpenAI con el modelo previsto para este corte.');
   return {
     origin: e.APP_ORIGIN, supabaseUrl: e.SUPABASE_URL, anonKey: e.SUPABASE_ANON_KEY,
     serviceKey: e.SUPABASE_SERVICE_ROLE_KEY, secret: e.SERVER_SECRET, production,
     aiMode: e.AI_MODE, aiKey: env.OPENAI_API_KEY, aiModel: env.OPENAI_MODEL,
     aiDailyLimit: e.AI_DAILY_LIMIT, aiGlobalDailyLimit: e.AI_GLOBAL_DAILY_LIMIT,
     captchaConfigured: env.AUTH_CAPTCHA_ENABLED === 'true',
+    monitorToken: env.MONITOR_TOKEN,
   };
+}
+
+export function authorizeMonitor(request: Request, expected: string | undefined): void {
+  if (!expected || expected.length < 32) throw new ApiError(503, 'MONITOR_NOT_CONFIGURED', 'Monitoreo de dependencias no configurado.');
+  const supplied = request.headers.get('authorization') ?? '';
+  const hash = (value: string) => createHash('sha256').update(value).digest();
+  if (!timingSafeEqual(hash(supplied), hash(`Bearer ${expected}`))) throw new ApiError(401, 'MONITOR_UNAUTHORIZED', 'No autorizado.');
 }
 
 export function guardRequest(request: Request, origin: string): void {

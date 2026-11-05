@@ -3,10 +3,10 @@
 -- Requires postgres/admin solely to create synthetic auth fixtures. Everything rolls back.
 begin;
 
-insert into auth.users(id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+insert into auth.users(id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data)
 values
- ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','synthetic-a@example.invalid','',now(),now(),now()),
- ('10000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','synthetic-b@example.invalid','',now(),now(),now());
+ ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','synthetic-a@example.invalid','',now(),now(),now(),'{"challenge_member":true}'),
+ ('10000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','synthetic-b@example.invalid','',now(),now(),now(),'{"challenge_member":true}');
 insert into auth.sessions(id,user_id,created_at,updated_at) values
  ('20000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001',now(),now()),
  ('20000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002',now(),now());
@@ -166,6 +166,7 @@ do $$ begin
     if not public.reserve_ai_call() then raise exception 'FAIL: budget denied early'; end if;
   end loop;
   if public.reserve_ai_call() then raise exception 'FAIL: lifetime budget exceeded'; end if;
+  if (public.ai_budget_status()->>'remaining')::integer <> 0 or (public.ai_budget_status()->>'warning')::boolean <> true then raise exception 'FAIL: budget alert'; end if;
 end $$;
 reset role;
 rollback;

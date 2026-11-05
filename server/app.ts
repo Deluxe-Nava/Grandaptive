@@ -5,7 +5,8 @@ import { generateAI } from './ai.ts';
 import { adminDatabase, userDatabase, dataOrThrow, rateLimit, type UserDatabase } from './database.ts';
 import { ApiError, clearSession, cookieNames, guardRequest, openReceipt, parse, privateRateKey, readConfig, readCookie, readJson, sealReceipt, secureHeaders, setSession, type Config } from './security.ts';
 import { aiSchema, consentsSchema, conversationSchema, decisionSchema, entryCreateSchema, entryPatchSchema, loginSchema, profileSchema, receiptBodySchema, receiptSchema, settingsPatchSchema, uuid } from './schemas.ts';
-import { interfaceSettingsSchema } from './schemas.ts';
+import { interfaceSettingsSchema, settingsSchema } from './schemas.ts';
+import { authorizeMonitor } from './security.ts';
 
 interface Actor { id: string; sessionId: string; token: string; db: UserDatabase }
 interface PreferenceRow {
@@ -103,10 +104,19 @@ export async function handleRequest(request: Request, configuration?: Config): P
   try {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '');
-    if (path === '/api/v1/health' && request.method === 'GET') return reply({ status: 'ok', version: '0.2', publicEnrollment: false });
+    if (path === '/api/v1/health' && ['GET', 'HEAD'].includes(request.method)) {
+      headers.set('X-Grandaptive-Health', 'live');
+      return request.method === 'HEAD' ? new Response(null, { status: 200, headers }) : reply({ status: 'ok', version: '0.3', publicEnrollment: false, scope: 'process' });
+    }
     const config = configuration ?? readConfig();
     headers = secureHeaders(config.production);
     headers.set('X-Request-Id', requestId);
+    if (path === '/api/v1/ready' && ['GET', 'HEAD'].includes(request.method)) {
+      authorizeMonitor(request, config.monitorToken);
+      const probe = await userDatabase(config).rpc('backend_readiness');
+      if (probe.error || probe.data !== 2) throw new ApiError(503, 'DEPENDENCY_UNAVAILABLE', 'El backend no está listo.');
+      return request.method === 'HEAD' ? new Response(null, { status: 200, headers }) : reply({ status: 'ready', schemaVersion: 2 });
+    }
     guardRequest(request, config.origin);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     const body = () => readJson(request);
@@ -141,6 +151,10 @@ export async function handleRequest(request: Request, configuration?: Config): P
     const actor = await authorize(config, readCookie(request, names.access));
     await rateLimit(config, `user:${actor.id}`, 120, 60);
     if (path === '/api/v1/auth/session' && request.method === 'GET') return reply({ user: { id: actor.id } });
+    if (path === '/api/v1/usage/ai' && request.method === 'GET') {
+      const budget = dataOrThrow(await adminDatabase(config).rpc('ai_budget_status'));
+      return reply({ mode: config.aiMode, userDailyLimit: config.aiDailyLimit, projectDailyLimit: config.aiGlobalDailyLimit, projectLifetimeAttempts: budget, unit: 'attempts-not-dollars' });
+    }
     if (path === '/api/v1/auth/logout' && request.method === 'POST') {
       const input = parse(z.object({ allDevices: z.boolean().default(false) }).strict(), await body());
       const { error } = await adminDatabase(config).auth.admin.signOut(actor.token, input.allDevices ? 'global' : 'local');
@@ -224,6 +238,11 @@ export async function handleRequest(request: Request, configuration?: Config): P
         return reply({ settings: (dataOrThrow(result) as PreferenceRow).settings });
       }
     }
+    if (path === '/api/v1/settings/preview' && request.method === 'POST') {
+      const { settings } = parse(z.object({ settings: settingsSchema }).strict(), await body());
+      const preview = await generateAI({ operation: 'accompany', entries: [], profileItems: [], settings: { ...settings, settingsRevision: 0 } }, { mode: 'mock' });
+      return reply({ ...preview, settings, persisted: false });
+    }
 
     if (path === '/api/v1/interface-settings') {
       if (request.method === 'GET') {
@@ -279,8 +298,22 @@ export async function handleRequest(request: Request, configuration?: Config): P
       const rows = await sources(actor, input.entryIds);
       checkPermission(pref, input.operation, rows);
       await checkConversation(actor, input.conversationId, input.operation === 'pattern' ? undefined : rows[0].id);
+      let previousResponse: AIContent | undefined;
+      let previousUserTurn: string | undefined;
+      let previousProfileVersions: Record<string, string> = {};
+      if (input.previousReceipt && input.action !== 'change-topic') {
+        const previous = parse(receiptSchema, openReceipt(input.previousReceipt, config.secret));
+        if (previous.conversationId !== input.conversationId || previous.sources.length !== input.entryIds.length || previous.sources.some(source => !input.entryIds.includes(source.entryId))) throw new ApiError(409, 'CONVERSATION_MISMATCH', 'El contexto anterior pertenece a otra conversación o fuente.');
+        await revalidateReceipt(actor, previous);
+        previousResponse = validateContent(previous.content, previous.operation, pref.settings);
+        previousUserTurn = previous.lastUserTurn;
+        previousProfileVersions = previous.profileVersions;
+      }
       if (config.aiMode === 'disabled') throw new ApiError(503, 'AI_DISABLED', 'La IA no está habilitada. Tu diario sigue disponible.');
+      if (config.aiMode === 'openai' && (!config.aiKey || config.aiModel !== 'gpt-5.4-mini')) throw new ApiError(503, 'AI_NOT_CONFIGURED', 'La IA aún no está configurada. Tu diario sigue disponible.');
       const profile = pref.profile_memory ? dataOrThrow(await actor.db.from('profile_items').select('id,text,category,updated_at').eq('user_id', actor.id).eq('status', 'accepted').order('updated_at', { ascending: false }).limit(10)) : [];
+      const profileVersions: Record<string, string> = { ...Object.fromEntries(profile.map(item => [item.id, item.updated_at as string])), ...previousProfileVersions };
+      if (Object.keys(profileVersions).length > 20) throw new ApiError(409, 'CONTEXT_LIMIT', 'Inicia un contexto nuevo para continuar con menos información.');
       await rateLimit(config, `ai:user:${actor.id}`, config.aiDailyLimit, 86400);
       await rateLimit(config, 'ai:global', config.aiGlobalDailyLimit, 86400);
       if (config.aiMode === 'openai') {
@@ -289,14 +322,14 @@ export async function handleRequest(request: Request, configuration?: Config): P
       }
       const effectiveSettings = { ...pref.settings, listenOnly: input.action === 'listen' || pref.settings.listenOnly };
       let generated: { content: AIContent; simulation: boolean };
-      try { generated = await generateAI({ operation: input.operation, entries: rows.map(row => ({ id: row.id, version: row.version, text: row.text })), settings: effectiveSettings, profileItems: profile, turnText: input.turnText, context: input.context, action: input.action }, { mode: config.aiMode, apiKey: config.aiKey, model: config.aiModel }); }
+      try { generated = await generateAI({ operation: input.operation, entries: rows.map(row => ({ id: row.id, version: row.version, text: row.text })), settings: effectiveSettings, profileItems: profile, turnText: input.turnText, previousResponse, previousUserTurn, context: input.context, action: input.action }, { mode: config.aiMode, apiKey: config.aiKey, model: config.aiModel }); }
       catch { throw new ApiError(503, 'AI_UNAVAILABLE', 'La IA no pudo ofrecer una respuesta válida. Tu registro se conserva; puedes continuar sin IA.'); }
       if (generated.content.type === 'pattern') {
         const rejected = await actor.db.from('rejected_patterns').select('pattern_key').eq('user_id', actor.id).eq('pattern_key', generated.content.patternKey).maybeSingle();
         if (rejected.error) dataOrThrow(rejected);
         if (rejected.data) throw new ApiError(409, 'PATTERN_REJECTED', 'Se descartó una propuesta que ya habías rechazado.');
       }
-      const receipt = { userId: actor.id, expiresAt: Date.now() + 15 * 60 * 1000, operation: input.operation, sources: rows.map(row => ({ entryId: row.id, entryVersion: row.version })), authorizationRevision: pref.authorization_revision, settingsRevision: pref.settings.settingsRevision, conversationId: input.conversationId, profileItemIds: profile.map(item => item.id), profileVersions: Object.fromEntries(profile.map(item => [item.id, item.updated_at as string])), content: generated.content, simulation: generated.simulation };
+      const receipt = { userId: actor.id, expiresAt: Date.now() + 15 * 60 * 1000, operation: input.operation, sources: rows.map(row => ({ entryId: row.id, entryVersion: row.version })), authorizationRevision: pref.authorization_revision, settingsRevision: pref.settings.settingsRevision, conversationId: input.conversationId, profileItemIds: Object.keys(profileVersions), profileVersions, content: generated.content, simulation: generated.simulation, lastUserTurn: input.turnText };
       await revalidateReceipt(actor, receipt);
       await authorize(config, actor.token);
       return reply({ schemaVersion: '0.1', requestId, simulation: generated.simulation, content: generated.content, context: { sources: receipt.sources, profileItemIds: receipt.profileItemIds }, receipt: sealReceipt(receipt, config.secret), expiresAt: receipt.expiresAt });
@@ -320,7 +353,19 @@ export async function handleRequest(request: Request, configuration?: Config): P
     if (path === '/api/v1/interpretations' && request.method === 'GET') {
       const entryId = parse(uuid, url.searchParams.get('entryId'));
       const offset = parse(z.coerce.number().int().min(0).max(10000), url.searchParams.get('offset') ?? 0);
-      return reply({ interpretations: dataOrThrow(await actor.db.from('interpretations').select('*').eq('user_id', actor.id).eq('entry_id', entryId).order('created_at').order('id').range(offset, offset + 99)), limit: 100, offset });
+      const current = (await sources(actor, [entryId]))[0];
+      const items = dataOrThrow(await actor.db.from('interpretations').select('*').eq('user_id', actor.id).eq('entry_id', entryId).order('created_at').order('id').range(offset, offset + 99));
+      return reply({ interpretations: items.map(item => ({ ...item, basedOnPreviousVersion: item.entry_version !== current.version })), limit: 100, offset });
+    }
+    const feedbackMatch = path.match(/^\/api\/v1\/interpretations\/([^/]+)\/readings\/([0-9]+)$/);
+    if (feedbackMatch && request.method === 'PATCH') {
+      const input = parse(z.object({ fits: z.boolean() }).strict(), await body());
+      const result = dataOrThrow(await actor.db.rpc('set_reading_feedback', { p_id: parse(uuid, feedbackMatch[1]), p_index: parse(z.coerce.number().int().min(0).max(7), feedbackMatch[2]), p_fits: input.fits }));
+      return reply({ interpretation: result });
+    }
+    if (path === '/api/v1/safety/status' && request.method === 'GET') {
+      const activations = dataOrThrow(await actor.db.rpc('own_safety_activation_count'));
+      return reply({ activations, specialistProtocol: 'pending', automaticDetection: false });
     }
     const interpretationMatch = path.match(/^\/api\/v1\/interpretations\/([^/]+)$/);
     if (interpretationMatch && request.method === 'DELETE') {
@@ -331,14 +376,15 @@ export async function handleRequest(request: Request, configuration?: Config): P
 
     if (path === '/api/v1/export' && request.method === 'GET') {
       await rateLimit(config, `export:${actor.id}`, 3, 3600);
-      const [entries, interpretations, profile, conversations, prefs, rejected, links] = await Promise.all([
+      const [entries, interpretations, profile, conversations, prefs, rejected, links, safetyActivations] = await Promise.all([
         ...['entries', 'interpretations', 'profile_items', 'conversations'].map(table => allRows(actor.db, table, actor.id)),
         preferences(actor),
         allRows(actor.db, 'rejected_patterns', actor.id, ['pattern_key']),
         allRows(actor.db, 'profile_item_sources', actor.id, ['profile_item_id', 'entry_id']),
+        actor.db.rpc('own_safety_activation_count').then(dataOrThrow),
       ]);
       headers.set('Content-Type', 'text/plain; charset=utf-8'); headers.set('Content-Disposition', 'attachment; filename="mis-datos-grandaptive.txt"');
-      const text = `EXPORTACIÓN PERSONAL\nGenerada: ${new Date().toISOString()}\nNo incluye contraseñas, tokens, borradores del navegador ni conversaciones no guardadas.\n\n${JSON.stringify({ entries, interpretations, profile, conversations, preferences: prefs, rejectedPatterns: rejected, profileSources: links }, null, 2)}`;
+      const text = `EXPORTACIÓN PERSONAL\nGenerada: ${new Date().toISOString()}\nNo incluye contraseñas, tokens, borradores del navegador ni conversaciones no guardadas.\n\n${JSON.stringify({ entries, interpretations, profile, conversations, preferences: prefs, rejectedPatterns: rejected, profileSources: links, safetyActivations }, null, 2)}`;
       return new Response(text, { headers });
     }
     if (path === '/api/v1/account' && request.method === 'DELETE') {

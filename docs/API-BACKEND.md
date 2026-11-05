@@ -1,6 +1,8 @@
-# Contrato HTTP del backend · v0.2
+# Contrato HTTP del backend · v0.3
 
 Implementado en server/app.ts y server/schemas.ts. La demo visual anterior todavía no lo consume. Todos los ejemplos usan datos ficticios.
+
+Validación posterior del 5/11/2026: recorrido real de datos y sesiones con dos cuentas sintéticas aprobado. POST /settings/preview acepta el objeto anidado documentado; corrección publicada. CAPTCHA/login de navegador y OpenAI real siguen pendientes; ver ESTADO-BACKEND.md y CAPTCHA-Y-ACCESO.md.
 
 ## Convenciones
 
@@ -14,7 +16,8 @@ Los DTO de entradas/permisos/IA usan camelCase. Perfil y listas de interpretacio
 
 ## Sesiones
 
-- GET `/health`: estado del proceso, versión y registro público cerrado; no comprueba dependencias.
+- GET/HEAD `/health`: estado del proceso, versión y registro público cerrado; no comprueba dependencias ni consume IA. HEAD no devuelve cuerpo.
+- GET/HEAD `/ready`: comprueba configuración y RPC de esquema 2 en Supabase con clave anon; requiere `Authorization: Bearer <MONITOR_TOKEN>` independiente de la sesión. Sólo para monitoreo; sin datos personales. 401 si el token no coincide; 503 si falta configuración, migración o conexión. No prueba login, RLS entre cuentas ni disponibilidad de OpenAI.
 - POST `/auth/login`: `{email,password,captchaToken}`. Devuelve `{user:{id},expiresIn}` y dos cookies HttpOnly; CAPTCHA validado por Supabase Auth configurado. Demo requiere miembro invitado.
 - GET `/auth/session`: `{user:{id}}`.
 - POST `/auth/refresh`: `{}`; renueva cookies si sesión sigue activa dentro de ocho horas desde creación.
@@ -52,14 +55,16 @@ La revisión aumenta sólo si cambian permisos. Patrones usa capa 2 y fuentes au
 
 ## Configuración
 
-GET `/settings` → `{settings:{tone,length,listenOnly,followUp,settingsRevision}}`.
+GET `/settings` → `{settings:{tone,length,listenOnly,followUp,questionStyle,useExamples,literalLanguage,modality,settingsRevision}}`.
 
 PATCH `/settings`:
 ```json
-{"expectedRevision":0,"settings":{"tone":"neutral","length":"brief","listenOnly":true,"followUp":false}}
+{"expectedRevision":0,"settings":{"tone":"neutral","length":"brief","listenOnly":true,"followUp":false,"questionStyle":"direct","useExamples":false,"literalLanguage":true,"modality":"text"}}
 ```
 
-tone: neutral/warm/practical; length: brief/detailed. UI no escribe settingsRevision. Para restablecer enviar valores iniciales con revisión actual.
+tone: neutral/warm/practical; length: brief/detailed; questionStyle: direct/open; useExamples y literalLanguage: booleanos; modality: únicamente text. UI no escribe settingsRevision. Para restablecer enviar valores iniciales con revisión actual. Los campos nuevos omitidos adoptan los valores del ejemplo; enviar siempre el conjunto completo para preservar preferencias.
+
+POST `/settings/preview`: `{settings:{...}}` con esos campos, sin settingsRevision. Devuelve una respuesta simulada, settings y persisted:false. Requiere sesión; no guarda preferencias, no usa el diario ni llama a OpenAI. Es una muestra de estilo, no una evaluación de cumplimiento del modelo real.
 
 GET `/interface-settings` → `{settings}`.
 PATCH `/interface-settings` envía:
@@ -75,6 +80,8 @@ POST `/conversations`: `{entryId:"UUID"}` → 201 `{conversation:{id,entry_id,sa
 
 POST `/conversations/:id/pause`: `{}` → `{paused:true,specialistProtocol:"pending"}`. Persistente e irreversible para esa conversación. Toda IA de esa conversación queda bloqueada, incluido guardado de recibos anteriores. No es un detector de crisis ni implementa protocolo clínico.
 
+GET `/safety/status`: `{activations,specialistProtocol:"pending",automaticDetection:false}`. Cuenta privada de pausas, sin motivos ni contenido; no aumenta por repetir la misma pausa. Se conserva al borrar una conversación y se elimina al borrar la cuenta. No es indicador de diagnóstico ni gravedad.
+
 ## Generación de IA
 
 POST `/ai/operations`:
@@ -88,7 +95,9 @@ POST `/ai/operations`:
 }
 ```
 
-operation: accompany/summary/interpret/communicate/pattern. Una entrada salvo pattern (1–5, sin duplicados); turnText opcional hasta 2.000 caracteres. context opcional: school/family/work/friendship. action: continue/skip/change-topic/listen. Sin historial conversacional persistido automáticamente: entrada y turno actual son el contexto del corte.
+operation: accompany/summary/interpret/communicate/pattern. Una entrada salvo pattern (1–5, sin duplicados); turnText opcional hasta 2.000 caracteres. context opcional: school/family/work/friendship. action: continue/skip/change-topic/listen.
+
+Para continuar, enviar previousReceipt con el último recibo opaco recibido. Permite incluir sólo el último intercambio validado, además de la entrada y turno actual, sin persistir automáticamente un historial completo. Debe corresponder al mismo usuario, conversación y conjunto de entradas; se revalidan caducidad, permisos, configuración, versiones y pausa. change-topic descarta ese contexto. Si cambia una fuente o configuración, iniciar con contexto nuevo; no reintentar recibos rechazados. La procedencia acumula los ítems de perfil del contexto previo y actual, hasta 20; CONTEXT_LIMIT requiere iniciar sin previousReceipt. Descartarlo también después de marcar una lectura como «no encaja»: el recibo original es inmutable y no incorpora ese feedback.
 
 Se envía hasta diez ítems aceptados del perfil si capa 3 activa. No se envía todo el diario. Respuesta:
 ```json
@@ -120,7 +129,9 @@ Al fallar OpenAI se devuelve AI_UNAVAILABLE; el diario permanece. No se sustituy
 
 POST `/interpretations`: `{receipt:"..."}` → 201 `{id,generatedBy:"simulation"|"ai"}`. Acepta sólo operaciones no pattern. Revalida dueño, sesión, permisos, configuración, fuentes versionadas, perfil usado y conversación. Recibo vence en 15 min.
 
-GET `/interpretations?entryId=UUID&offset=0` → `{interpretations,limit:100,offset}`. Cada fila conserva entry_version, type, content, simulation y context_profile_ids. UI compara versión actual y muestra etiqueta de versión anterior.
+GET `/interpretations?entryId=UUID&offset=0` → `{interpretations,limit:100,offset}`. Cada fila conserva entry_version, type, content, simulation y context_profile_ids; añade basedOnPreviousVersion y rejected_readings. UI muestra la etiqueta de versión anterior cuando corresponde.
+
+PATCH `/interpretations/:id/readings/:index`: `{fits:false}` marca «no encaja»; true desmarca. Índice desde cero dentro de possibleReadings de una interpretación guardada propia. Devuelve `{interpretation}`. No modifica content ni el original del diario; actualiza rejected_readings de forma atómica. Para respuestas aún no guardadas, el estado visual corresponde al frontend.
 
 DELETE `/interpretations/:id`: `{}`.
 
@@ -138,9 +149,13 @@ Categorías permitidas: communication/sensory/energy/social/strategies. Texto ma
 
 GET `/export`: archivo `text/plain`, mis-datos-grandaptive.txt. Hasta tres exportaciones/hora. Reúne páginas por tabla; exportaciones grandes fallan explícitamente, no se truncan silenciosamente. No es snapshot transaccional concurrente. Sin contraseñas/tokens/borradores.
 
+Incluye safetyActivations, el conteo privado de pausas.
+
 DELETE `/account`: `{confirmation:"ELIMINAR MI CUENTA"}`. Elimina datos activos con usuario Auth y borra cookies. Respuesta distingue backupRetention pendiente y localDrafts a limpiar por frontend. No prometer borrado de descargas, backups o logs de proveedores desde esta respuesta.
 
 ## Qué simular durante integración
+
+GET `/usage/ai` autenticado devuelve mode, userDailyLimit, projectDailyLimit, projectLifetimeAttempts y unit=attempts-not-dollars. El presupuesto acumulado incluye used, limit, remaining y warning desde el 80 % de los 100 intentos. No es saldo de OpenAI ni consumo monetario; los límites diarios publicados son límites configurados, no saldo diario restante. El frontend debe mostrar aviso de cuota y el equipo revisar la facturación del proveedor.
 
 Usar mock AI para las cinco operaciones y datos sintéticos para diarios/perfil. Fallos de red/proveedor y sesiones se simulan en tests, no mediante una ruta de depuración pública. PostgreSQL embebido verifica migración/RLS con Auth de prueba. No confundir mocks con cuentas reales ni usar localStorage como autenticación.
 

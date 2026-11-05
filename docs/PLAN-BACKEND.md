@@ -1,10 +1,12 @@
 # Plan detallado del backend GRANDAPTIVE
 
-Actualizado: 4 de noviembre de 2026. Cinco integrantes; dos días de challenge. Este documento diferencia implementación local, conexión externa pendiente y requisitos aún incompletos. No declara terminado todo el MVP.
+Actualizado: 5 de noviembre de 2026. Cinco integrantes; dos días de challenge. Este documento diferencia implementación local, conexión externa pendiente y requisitos aún incompletos. No declara terminado todo el MVP.
+
+Estado vigente: hay dominio público Vercel con health v0.2, pero sesión devuelve 503. Se confirmó cuenta de UptimeRobot, sin monitor creado. La revisión local v0.3 añade monitoreo de dependencias, preferencias completas de texto, feedback de lecturas, continuidad de un intercambio y refuerzo de membresía en RLS. Requiere migración 002 y redeploy. El texto del chat compartido sí se pudo consultar. La cobertura y pendientes actualizados están en [REVISION-BACKEND-2026-11-05.md](REVISION-BACKEND-2026-11-05.md); el procedimiento de publicación/monitoreo en [UPTIMEROBOT.md](UPTIMEROBOT.md).
 
 ## 1. Alcance y decisiones
 
-**Confirmado por el usuario:** Must primero; web responsiva y TypeScript; servicios gestionados; sin voz, biblioteca ni sincronización offline en el primer corte. Frontend después. Presupuesto total de $500 MXN y compra prevista de USD 5 para OpenAI API. No hay cuentas confirmadas. Las encuestas del partner son el antecedente de validación comunicado; no se entregaron para revisión.
+**Confirmado por el usuario:** Must primero; web responsiva y TypeScript; servicios gestionados; sin voz, biblioteca ni sincronización offline en el primer corte. Frontend después. Presupuesto total de $500 MXN y compra prevista de USD 5 para OpenAI API. Se comunicaron cuentas Vercel, Supabase y UptimeRobot; falta validar su integración completa. Las encuestas del partner son el antecedente de validación comunicado; no se entregaron para revisión.
 
 **Propuesta implementada localmente:** Vercel para publicación/servidor, Supabase para PostgreSQL/Auth y OpenAI Responses API con `gpt-5.4-mini` como candidato inicial. El modelo sigue pendiente de evaluación real. No se necesitan microservicios, base vectorial, Redis ni agentes con herramientas para este corte.
 

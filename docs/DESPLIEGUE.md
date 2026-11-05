@@ -1,6 +1,6 @@
 # Configuración y despliegue del backend
 
-Estado: archivos preparados; no cuentas creadas, pago realizado ni despliegue publicado. Seguir en orden con datos sintéticos. Cualquier operación facturable la habilita el equipo al configurar sus servicios.
+Estado al 5 de noviembre de 2026: existe publicación v0.2 en grandaptive.vercel.app; health responde 200 y sesión 503 de configuración. Archivos locales v0.3 preparados, sin publicar desde esta revisión ni ejecutar SQL remoto. No se realizó pago ni llamada OpenAI facturable. Seguir con datos sintéticos. Consultar [UPTIMEROBOT.md](UPTIMEROBOT.md) para corregir Production y configurar el monitor.
 
 ## 1. Preparación local
 
@@ -27,7 +27,7 @@ Copiar los 64 caracteres a SERVER_SECRET y evitar compartir el historial de term
 ## 2. Supabase: base y autenticación
 
 1. Crear un proyecto nuevo de Supabase Free en cuenta controlada por el equipo. Elegir región documentando dónde se procesarán los datos. Guardar contraseña administrativa en gestor de contraseñas. No se necesita exponer una conexión PostgreSQL directa en la aplicación.
-2. Leer `supabase/migrations/001_backend.sql` con otra persona y ejecutarlo UNA VEZ en SQL Editor del proyecto nuevo. Está diseñado para crear tablas; no es migración idempotente para una base existente ni debe ejecutarse sobre datos ajenos.
+2. Leer `supabase/migrations/001_backend.sql` con otra persona y ejecutarlo UNA VEZ en SQL Editor del proyecto nuevo. Está diseñado para crear tablas; no es migración idempotente para una base existente ni debe ejecutarse sobre datos ajenos. Después aplicar `002_prd_monitoring.sql`. Si 001 ya está aplicada, ejecutar únicamente 002. Esta migración añade preferencias, feedback, conteos y monitoreo, y refuerza membresía en RLS; normaliza preferencias existentes e invalida recibos que usaban su revisión anterior. Respaldar datos existentes antes de migrar.
 3. Verificar RLS en todas las tablas públicas creadas. No desactivar políticas para “arreglar” un error. La migración usa `auth.sessions`; comprobar en este proyecto compatibilidad con la comprobación de sesión.
 4. Copiar URL, anon key y service role key a las variables respectivas del servidor. La clave administrativa evita RLS y debe permanecer exclusivamente en servidor. El cliente no necesita estas claves: consumirá nuestra API.
 5. En Auth deshabilitar registro público. Para esta demo crear dos usuarios de prueba del equipo con correos bajo su control y contraseñas únicas. No enviar diarios reales.
@@ -40,7 +40,7 @@ set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb)
 where id = 'REEMPLAZAR-POR-UUID-DEL-USUARIO-DE-PRUEBA'::uuid;
 ```
 
-No introducir el placeholder literalmente ni usar una actualización sin WHERE. Este paso no crea ni cambia contraseñas. La comprobación de membresía está en el backend; registro público cerrado y control de altas son parte necesaria de esta demo.
+No introducir el placeholder literalmente ni usar una actualización sin WHERE. Este paso no crea ni cambia contraseñas. La comprobación de membresía está en el backend y, con 002, también en RLS; registro público cerrado y control de altas son parte necesaria de esta demo.
 7. Configurar política de contraseñas, URL del sitio y URLs de redirección exactas. No habilitar SMTP ni recuperación pública hasta decidir y probar ese flujo; no está conectado en esta entrega.
 8. Crear CAPTCHA Turnstile o hCaptcha y activarlo en Supabase Auth con el secreto del proveedor y dominios permitidos. El frontend futuro enviará `captchaToken`; Supabase valida el token. No consumirlo también con otra verificación porque es de un solo uso. La bandera `AUTH_CAPTCHA_ENABLED=true` es una comprobación de configuración declarada, NO activa ni demuestra que el proveedor esté protegido. [Guía CAPTCHA Supabase](https://supabase.com/docs/guides/auth/auth-captcha).
 9. Comprobar inicio con token válido y rechazo con token vacío/falso/reutilizado. Sin widget integrado se pueden usar las herramientas de prueba del proveedor en entorno de desarrollo; nunca sus claves de prueba en despliegue público. Esta prueba queda pendiente hasta integrar CAPTCHA real.

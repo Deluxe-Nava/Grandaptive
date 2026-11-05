@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleRequest } from '../server/app.ts';
 import type { Config } from '../server/security.ts';
+import { sealReceipt, openReceipt } from '../server/security.ts';
 
 const config: Config = { origin: 'https://challenge.example', supabaseUrl: 'https://database.example', anonKey: 'synthetic-anon-key-only', serviceKey: 'synthetic-service-key-only', secret: 'a1'.repeat(32), production: true, aiMode: 'disabled', aiDailyLimit: 15, aiGlobalDailyLimit: 100, captchaConfigured: true };
 const userId = '10000000-0000-4000-8000-000000000001';
@@ -62,4 +63,46 @@ test('sesión revocada bloquea el handler antes de consultar el diario', async c
   const response = await handleRequest(request('entries', undefined, true), config);
   assert.equal(response.status, 401);
   assert.equal((await response.json()).error.code, 'SESSION_REVOKED');
+});
+
+test('continuación exige recibo propio, fresco y de la misma conversación sin guardar el historial', async context => {
+  const entryId = '30000000-0000-4000-8000-000000000001';
+  const conversationId = '40000000-0000-4000-8000-000000000001';
+  const pref = { ai_enabled: true, conversation: true, patterns: false, profile_memory: false, authorization_revision: 0, settings: { tone: 'neutral', length: 'brief', listenOnly: true, followUp: false, settingsRevision: 0 } };
+  context.mock.method(globalThis, 'fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes('/auth/v1/user')) return Response.json({ id: userId, app_metadata: { challenge_member: true } });
+    if (url.includes('/rpc/assert_live_session') || url.includes('/rpc/consume_rate_limit')) return Response.json(true);
+    assert.equal(init?.method ?? 'GET', 'GET'); // No persistence of conversation turns.
+    if (url.includes('/account_preferences')) return Response.json(pref);
+    if (url.includes('/entries')) return Response.json([{ id: entryId, user_id: userId, text: 'Relato sintético.', version: 1, available_for_analysis: false }]);
+    if (url.includes('/conversations')) return Response.json({ id: conversationId, entry_id: entryId, safety_state: 'normal' });
+    throw new Error('Unexpected network');
+  });
+  const receipt = { userId, expiresAt: Date.now()+60000, operation: 'accompany', sources: [{ entryId, entryVersion: 1 }], authorizationRevision: 0, settingsRevision: 0, conversationId, profileItemIds: [], profileVersions: {}, content: { type: 'accompany', text: 'Registro conservado.', questions: [], recommendations: [] }, simulation: true, lastUserTurn: 'Anterior.' };
+  const call = (previous: object) => handleRequest(request('ai/operations', { operation: 'accompany', entryIds: [entryId], conversationId, turnText: 'Ahora.', previousReceipt: sealReceipt(previous, config.secret) }, true), { ...config, aiMode: 'mock' });
+  const own = await call(receipt);
+  assert.equal(own.status, 200);
+  const value = await own.json();
+  assert.equal((openReceipt(value.receipt, config.secret) as {lastUserTurn:string}).lastUserTurn, 'Ahora.');
+  assert.equal((await call({ ...receipt, userId: '10000000-0000-4000-8000-000000000002' })).status, 409);
+  assert.equal((await call({ ...receipt, expiresAt: 0 })).status, 409);
+  assert.equal((await call({ ...receipt, conversationId: '40000000-0000-4000-8000-000000000002' })).status, 409);
+});
+
+test('preview usa el contrato settings anidado, sin guardar preferencias ni contactar IA', async context => {
+  context.mock.method(globalThis, 'fetch', async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes('/auth/v1/user')) return Response.json({ id: userId, app_metadata: { challenge_member: true } });
+    if (url.includes('/rpc/assert_live_session') || url.includes('/rpc/consume_rate_limit')) return Response.json(true);
+    throw new Error('Unexpected persistence or provider call');
+  });
+  const settings = { tone: 'warm', length: 'brief', listenOnly: true, followUp: false };
+  const response = await handleRequest(request('settings/preview', { settings }, true), config);
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.simulation, true);
+  assert.equal(body.persisted, false);
+  assert.deepEqual(body.content.questions, []);
+  assert.equal((await handleRequest(request('settings/preview', settings, true), config)).status, 422);
 });

@@ -126,7 +126,7 @@ test('configuración ausente o insegura falla con mensaje que no expone valores 
   assert.throws(() => readConfig(env({ APP_ORIGIN: 'http://challenge.example' })), code('BACKEND_NOT_CONFIGURED'));
   assert.throws(() => readConfig(env({ APP_ORIGIN: 'https://challenge.example/path' })), code('BACKEND_NOT_CONFIGURED'));
   assert.throws(() => readConfig(env({ SUPABASE_URL: 'http://database.example' })), code('BACKEND_NOT_CONFIGURED'));
-  assert.throws(() => readConfig(env({ AI_MODE: 'openai' })), code('AI_NOT_CONFIGURED'));
+  assert.equal(readConfig(env({ AI_MODE: 'openai' })).aiMode, 'openai'); // Misconfigured AI must not disable the diary.
   const config = readConfig(env());
   assert.equal(config.aiMode, 'disabled');
   assert.equal(config.aiDailyLimit, 15);

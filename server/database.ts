@@ -20,6 +20,7 @@ const timedFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal
 
 export function dataOrThrow<T>(result: { data: T; error: { code?: string } | null }): NonNullable<T> {
   if (result.error) {
+    if (result.error.code === 'P0002') throw new ApiError(404, 'NOT_FOUND', 'No se encontró el recurso.');
     if (['42501', 'PGRST301', 'PGRST302'].includes(result.error.code ?? '')) throw new ApiError(403, 'ACCESS_DENIED', 'No tienes acceso a esta operación.');
     if (['23503', '23514', '22023', 'P0001', '40001', '23505'].includes(result.error.code ?? '')) throw new ApiError(409, 'STATE_CONFLICT', 'Los datos cambiaron o la operación no es válida. Actualiza y vuelve a intentarlo.');
     throw new ApiError(503, 'DATABASE_UNAVAILABLE', 'No se pudo completar la operación. Conserva tu borrador y vuelve a intentarlo.');

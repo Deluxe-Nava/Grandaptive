@@ -1,4 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
 
-.env.local
-node_modules
-dist
+.vercel/
+.vercel
+.env*
+!.env.example

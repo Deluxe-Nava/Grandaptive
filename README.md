@@ -1,130 +1,78 @@
-# Grandaptive
+# GRANDAPTIVE · backend del challenge
 
-An AI-assisted web application project focused on emotional self-understanding, communication, and everyday transitions for autistic university students.
+Backend TypeScript para diario, perfil, consentimientos, sesiones y OpenAI. Revisión v0.3 del 5 de noviembre de 2026. **Producción y migración 002 conectadas; recorrido con dos cuentas sintéticas aprobado y cuentas eliminadas. El frontend anterior sigue siendo una simulación local y todavía no consume esta API. Faltan CAPTCHA/login interactivo y OpenAI real.**
 
-> **Status:** Early planning and prototyping. This README is a working draft. Features, technologies, and project scope will be updated as research and development progress.
+Objetivo: comprender experiencias, autonomía y bienestar; nunca enseñar a camuflarse mejor. Uso actual: equipo y datos sintéticos. RF-17 tiene una pausa técnica persistente, sin detector, mensajes ni protocolo aprobados por especialistas; no se declara cumplido.
 
-## About the Project
+## Abrir en VS Code
+
+Abrir `grandaptive.code-workspace` o esta carpeta con Archivo → Abrir carpeta. Las tareas están en Terminal → Ejecutar tarea.
+
+## Leer primero
+
+Prioridad actual: [conexión y pruebas OpenAI](docs/OPENAI-CONEXION.md). CAPTCHA aplazado por el usuario; el control de login permanece activo.
+
+**Estado actual:** [terminado y pendiente](docs/ESTADO-BACKEND.md). **Siguiente configuración:** [CAPTCHA y cuentas de demo](docs/CAPTCHA-Y-ACCESO.md). Los estados de conexiones fallidas en revisiones anteriores son históricos.
+
+Siguiente etapa: [plan de cierre del backend](docs/CIERRE-BACKEND.md), con dependencias, criterios de terminado y pruebas reales pendientes. Diagnóstico sin escrituras: `npm run check:connections`. Inspección de metadatos en SQL Editor: `supabase/verify-installation.sql` (no confundir con los fixtures de `supabase/tests/`).
+
+Estado más reciente: [revisión contra PRD](docs/REVISION-BACKEND-2026-11-05.md) y [configuración de UptimeRobot](docs/UPTIMEROBOT.md). Aplicar la migración incremental `002_prd_monitoring.sql` después de `001_backend.sql` antes de desplegar v0.3. No se ejecutó SQL remoto durante esta revisión.
+
+1. [Plan detallado](docs/PLAN-BACKEND.md): alcance, módulos, responsables, entregas y pendientes.
+2. [Configuración y despliegue](docs/DESPLIEGUE.md): cuentas, variables, OpenAI y publicación.
+3. [Contrato HTTP](docs/API-BACKEND.md): rutas para conectar el frontend después.
+4. [Verificación](docs/VERIFICACION.md): evidencia local y pruebas externas pendientes.
+
+Los documentos iniciales PLAN-48H, DECISIONES y CONTRATOS conservan el contexto del simulador; la propuesta técnica actual está en los documentos anteriores.
+
+## Ejecutar
+
+Node.js 24.15 o superior compatible. En esta carpeta:
+
+```sh
+npm ci
+npm run dev:api
+```
+
+Sin credenciales, sólo `/api/v1/health` funciona; rutas privadas fallan de forma controlada. Copiar `.env.example` a `.env.local` y seguir DESPLIEGUE.md para conectar Supabase.
+
+```sh
+npm run build
+npm test
+npm run test:db
+npm run audit
+```
+
+Las pruebas usan datos sintéticos y proveedores simulados. `test:db` ejecuta PostgreSQL embebido con Auth de prueba; no crea cuentas ni gasta créditos. `npm run dev` abre la demo visual anterior en http://127.0.0.1:5173; el proxy `/api` está preparado para la integración futura.
+
+## Carpetas
+
+- `server/`: rutas, validaciones, cookies, permisos, Supabase y OpenAI.
+- `api/`: entrada Vercel con el mismo handler local.
+- `supabase/migrations/`: esquema, RLS, transacciones, borrado y cuotas.
+- `supabase/tests/` y `tests/`: pruebas SQL y TypeScript.
+- `scripts/`: pruebas PostgreSQL sin cuentas.
+- `src/`: contratos y demo visual existente; integración pendiente.
+- `docs/`: plan escrito, contrato y puesta en marcha.
+- `.vscode/`: tareas para VS Code.
+
+## Presupuesto
+
+$500 MXN totales declarados; compra prevista de USD 5 para OpenAI API, no realizada aquí. No se pagó ni contrató ningún servicio. IA inicial desactivada. Límites: 15 solicitudes por persona/día, 100 por proyecto/día y 100 intentos reales acumulados por proyecto.
+
+Claves sólo en servidor; nunca variables `VITE_*`. Las pruebas locales no certifican ausencia total de vulnerabilidades, WCAG ni seguridad clínica. La demo visual guarda en localStorage: usar exclusivamente datos ficticios hasta integrar sesiones y limpieza de datos locales.
+
+
+## Contexto del equipo
 
 Grandaptive is being developed for the **North American AI Challenge for Neurodiverse Learning** by five students from **Tecnológico de Monterrey, Campus Querétaro**, working with **Surfeando la Neurodiversidad** as our Challenge Partner.
 
 Our goal is to support autistic students in understanding their experiences, expressing their needs, and navigating transitions while encouraging mutual understanding with peers and mentors.
 
-## Problem and Approach
-
-We are exploring how emotional experiences, communication barriers, and environmental demands can affect participation in university activities.
-
-The project connects emotional support with executive function and transitions, such as moving from individual study to teamwork.
-
-Our approach is neuroaffirmative: we aim to support autonomy and mutual adaptation without encouraging masking or expecting autistic people to carry the entire responsibility for adapting.
-
-The specific problem and initial use case will be refined with our Challenge Partner and voluntary participant feedback.
-
-## Proposed First Prototype
-
-The initial web experience is expected to include:
-
-- **Optional emotional check-in:** Describe a situation, select an emotion, or choose “not sure” or “prefer not to say.”
-- **AI-assisted reflection:** Organize information provided by the user and suggest possible support options without deciding how the user feels.
-- **Small, adjustable next steps:** Help users prepare for a transition or activity.
-- **Communication support:** Draft an optional message describing needs or requesting adjustments from teammates.
-- **Interface preferences:** Explore readable text, predictable navigation, reduced visual distractions, and keyboard accessibility.
-
-Users will be able to skip questions, edit or reject suggestions, and decide what to share.
-
-Other ideas under consideration include an emotion vocabulary resource, guided social scenarios, a personal journal, and interface personalization tools. These are exploratory ideas, not committed first-version features.
-
-## Responsible AI and Privacy
-
-The application is intended as an educational support tool, not a diagnostic or treatment service.
-
-Our planned safeguards include:
-
-- No automatic emotion inference from faces, voices, or behavior.
-- No pressure to imitate a preferred social style.
-- Minimal data collection and clear consent.
-- No automatic sharing of emotional entries.
-- Fictional data for the initial demonstration.
-- API keys kept outside the public repository and browser code.
-- Clear AI limitations and access to human support when appropriate.
-
-These safeguards still require implementation and testing.
-
-## Development Roadmap
-
-1. Validate the problem and select the first user scenario.
-2. Design the main screens and review them with the Challenge Partner.
-3. Build a functional web prototype and integrate AI.
-4. Test accessibility, user control, privacy, and error handling.
-5. Incorporate feedback and document findings and limitations.
-6. Prepare the live demo, backup recording, pitch, and supporting materials.
-
-## Technology and Setup
-
-The technology stack and AI provider are pending selection.
-
-Installation instructions, environment configuration, and demo links will be added when a runnable version is available.
-
-## Arquitecture
-```text
-grandaptive/
-├── apps/
-│   ├── frontend/                   # Aplicación PWA (React + Vite + TypeScript)
-│   │   ├── public/                 # Iconos PWA, manifest.json, service worker
-│   │   ├── src/
-│   │   │   ├── assets/             # Apoyos visuales, pictogramas e iconos
-│   │   │   ├── components/         # Componentes UI de accesibilidad
-│   │   │   │   ├── common/         # Botones, modals, switches accesibles
-│   │   │   │   ├── journal/        # Editor libre, tarjetas de acompañamiento
-│   │   │   │   ├── assistant/      # Asistente de comunicación y 3 columnas
-│   │   │   │   ├── profile/        # Tarjetas de patrón aceptado/rechazado
-│   │   │   │   └── settings/       # Paneles de control N1 e interfaz
-│   │   │   ├── context/            # Proveedores de estado (UI Settings, Auth)
-│   │   │   ├── hooks/              # Custom hooks (useJournal, useAIEngine, useAccessibility)
-│   │   │   ├── pages/              # Vistas principales (Diario, Asistente, Perfil, Ajustes)
-│   │   │   ├── services/           # Cliente API HTTP (Axios/Fetch con retry offline)
-│   │   │   ├── store/              # Estado global persistente (Zustand)
-│   │   │   ├── styles/             # Temas de contraste, fuentes y tokens accesibles
-│   │   │   ├── types/              # Tipos TypeScript compartidos o del Frontend
-│   │   │   ├── App.tsx
-│   │   │   └── main.tsx
-│   │   ├── package.json
-│   │   └── vite.config.ts
-│   │
-│   └── backend/                    # API REST, Seguridad & Motor de IA
-│       ├── prisma/                 # Migraciones y esquema PostgreSQL + RLS
-│       │   └── schema.prisma
-│       ├── src/
-│       │   ├── config/             # Variables de entorno y SDKs
-│       │   ├── middlewares/        # Auth JWT, Privacy Layers, Safety Guardrails
-│       │   ├── modules/            # Módulos de dominio (Auth, Diario, Perfil, Privacidad)
-│       │   ├── ai_engine/          # Engine de 3 niveles, Prompts y Safety Pause
-│       │   ├── utils/              # Encriptación, sanitizadores de texto
-│       │   ├── app.ts
-│       │   └── server.ts
-│       ├── tests/                  # Banco de pruebas de comportamiento de IA
-│       ├── package.json
-│       └── tsconfig.json
-│
-├── docs/                           # PRD, Guías de diseño y arquitectura
-├── .gitignore
-├── README.md
-└── package.json                    # Workspace scripts (npm / pnpm / yarn)
-```
-## Team
+## Equipo
 
 - Abril Odette Jiménez Sánchez
 - Arturo Sebastián García Soto
 - Emma Valentina Molina Hernández
 - Erick Domínguez Navarrete
 - Naoto Santiago Salvador Masuoka
-
-## Documentation and Attribution
-
-As development progresses, this repository will document research learnings, design decisions, AI prompts, testing, individual contributions, and external libraries or code.
-
-Private participant information and consent records will not be published.
-
-## Current Limitations
-
-The proposed features have not yet been validated. No clinical effectiveness or measured user benefit is claimed. The final product name, scope, implementation details, and software license remain pending.

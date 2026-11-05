@@ -7,7 +7,7 @@ function fixture(): AiInput {
   return { operation: 'accompany', entries: [{ id: 'entry-a', version: 1, text: 'Relato ficticio sobre una reunión.' }], settings: freshState().settings, profileItems: [] };
 }
 const live = { mode: 'openai' as const, apiKey: 'test-only-secret', model: 'gpt-5.4-mini' };
-const answer = { type: 'accompany', text: 'Tu registro queda aquí.', questions: [], recommendations: [] };
+const answer = { type: 'accompany' as const, text: 'Tu registro queda aquí.', questions: [], recommendations: [] };
 function response(content: unknown, stopReason = 'completed') { return Response.json({ status: stopReason, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(content) }] }] }); }
 const fake = (handler: (url: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>) => handler as typeof fetch;
 
@@ -131,4 +131,18 @@ test('corta a 15 segundos aunque el proveedor no responda al aborto', async cont
 
 test('modelo o credencial ausente no produce solicitud', async () => {
   await assert.rejects(generateAI(fixture(), { mode: 'openai', model: 'gpt-5.4-mini' }, fake(() => { throw new Error('should not call'); })), /no está disponible/);
+});
+
+test('continuación incluye sólo el turno previo validado como datos; cambiar tema lo excluye', async () => {
+  const input = { ...fixture(), previousResponse: answer, previousUserTurn: 'Turno anterior sintético.' };
+  for (const action of ['continue', 'change-topic'] as const) {
+    await generateAI({ ...input, action }, live, fake((_url, init) => {
+      const payload = JSON.parse(String(init?.body));
+      const data = JSON.parse(payload.input[0].content).untrustedData;
+      assert.equal(Boolean(data.previousResponse), action === 'continue');
+      assert.equal(Boolean(data.previousUserTurn), action === 'continue');
+      assert.doesNotMatch(payload.instructions, /Turno anterior sintético/);
+      return response(answer);
+    }));
+  }
 });

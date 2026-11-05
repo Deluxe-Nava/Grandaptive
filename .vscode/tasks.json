@@ -5,6 +5,7 @@
     { "label": "Demo visual local", "type": "npm", "script": "dev", "isBackground": true, "problemMatcher": [] },
     { "label": "Comprobar tipos", "type": "npm", "script": "check", "problemMatcher": "$tsc", "group": "build" },
     { "label": "Pruebas API", "type": "npm", "script": "test", "problemMatcher": [], "group": "test" },
-    { "label": "Pruebas PostgreSQL", "type": "npm", "script": "test:db", "problemMatcher": [], "group": "test" }
+    { "label": "Pruebas PostgreSQL", "type": "npm", "script": "test:db", "problemMatcher": [], "group": "test" },
+    { "label": "Diagnóstico de conexiones (sin escrituras)", "type": "npm", "script": "check:connections", "problemMatcher": [] }
   ]
 }

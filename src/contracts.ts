@@ -26,6 +26,10 @@ export interface Settings {
   length: 'brief' | 'detailed';
   listenOnly: boolean;
   followUp: boolean;
+  questionStyle?: 'direct' | 'open';
+  useExamples?: boolean;
+  literalLanguage?: boolean;
+  modality?: 'text';
   settingsRevision: number;
 }
 

@@ -8,7 +8,13 @@ export const loginSchema = z.object({ email: z.email().max(254), password: z.str
 export const entryCreateSchema = z.object({ text, availableForAnalysis: z.boolean().default(false) }).strict();
 export const entryPatchSchema = z.object({ expectedVersion: z.number().int().positive(), text: text.optional(), availableForAnalysis: z.boolean().optional() }).strict().refine(value => value.text !== undefined || value.availableForAnalysis !== undefined);
 export const consentsSchema = z.object({ expectedRevision: z.number().int().nonnegative(), aiEnabled: z.boolean(), conversation: z.boolean(), patterns: z.boolean(), profileMemory: z.boolean() }).strict();
-export const settingsSchema = z.object({ tone: z.enum(['neutral', 'warm', 'practical']), length: z.enum(['brief', 'detailed']), listenOnly: z.boolean(), followUp: z.boolean() }).strict();
+export const settingsSchema = z.object({
+  tone: z.enum(['neutral', 'warm', 'practical']), length: z.enum(['brief', 'detailed']),
+  listenOnly: z.boolean(), followUp: z.boolean(),
+  questionStyle: z.enum(['direct', 'open']).default('direct'),
+  useExamples: z.boolean().default(false), literalLanguage: z.boolean().default(true),
+  modality: z.literal('text').default('text'),
+}).strict();
 export const settingsPatchSchema = z.object({ expectedRevision: z.number().int().nonnegative(), settings: settingsSchema }).strict();
 export const interfaceSettingsSchema = z.object({
   textScale: z.number().int().min(100).max(200).default(100),
@@ -24,6 +30,7 @@ export const conversationSchema = z.object({ entryId: uuid }).strict();
 export const aiSchema = z.object({
   operation, entryIds: z.array(uuid).min(1).max(5).refine(value => new Set(value).size === value.length),
   conversationId: uuid, turnText: z.string().max(2000).optional(),
+  previousReceipt: z.string().min(20).max(24000).optional(),
   context: z.enum(['school', 'family', 'work', 'friendship']).optional(),
   action: z.enum(['continue', 'skip', 'change-topic', 'listen']).default('continue'),
 }).strict().refine(value => value.operation === 'pattern' || value.entryIds.length === 1);
@@ -33,4 +40,5 @@ export const receiptSchema = z.object({
   sources: z.array(z.object({ entryId: uuid, entryVersion: z.number().int().positive() })).min(1).max(10),
   authorizationRevision: z.number().int(), settingsRevision: z.number().int(), conversationId: uuid,
   profileItemIds: z.array(uuid), profileVersions: z.record(uuid, z.string()), content: z.unknown(), simulation: z.boolean(),
+  lastUserTurn: z.string().max(2000).optional(),
 }).strict();

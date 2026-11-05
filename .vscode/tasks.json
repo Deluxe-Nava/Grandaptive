@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Backend local", "type": "npm", "script": "dev:api", "isBackground": true, "problemMatcher": [] },
+    { "label": "Demo visual local", "type": "npm", "script": "dev", "isBackground": true, "problemMatcher": [] },
+    { "label": "Comprobar tipos", "type": "npm", "script": "check", "problemMatcher": "$tsc", "group": "build" },
+    { "label": "Pruebas API", "type": "npm", "script": "test", "problemMatcher": [], "group": "test" },
+    { "label": "Pruebas PostgreSQL", "type": "npm", "script": "test:db", "problemMatcher": [], "group": "test" }
+  ]
+}

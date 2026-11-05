@@ -7,16 +7,16 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --config frontend/vite.config.ts --host 127.0.0.1",
     "check": "tsc --noEmit",
-    "test": "node --test tests/*.test.ts",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "dev:api": "node --env-file-if-exists=.env.local server/dev.ts",
-    "test:db": "node scripts/check-database.ts",
-    "check:connections": "node --env-file-if-exists=.env.local scripts/check-connections.ts",
-    "test:live": "node --env-file-if-exists=.env.local scripts/check-live-backend.ts",
-    "check:openai": "node --env-file-if-exists=.env.local scripts/check-openai.ts",
+    "test": "node --test backend/tests/*.test.ts shared/tests/*.test.ts",
+    "build": "tsc --noEmit && vite build --config frontend/vite.config.ts",
+    "preview": "vite preview --config frontend/vite.config.ts --host 127.0.0.1",
+    "dev:api": "node --env-file-if-exists=.env.local backend/src/dev.ts",
+    "test:db": "node backend/scripts/check-database.ts",
+    "check:connections": "node --env-file-if-exists=.env.local backend/scripts/check-connections.ts",
+    "test:live": "node --env-file-if-exists=.env.local backend/scripts/check-live-backend.ts",
+    "check:openai": "node --env-file-if-exists=.env.local backend/scripts/check-openai.ts",
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {

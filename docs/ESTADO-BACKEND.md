@@ -22,13 +22,13 @@ flowchart TD
 
 ## Terminado y comprobado en esta revisión
 
-- Se corrigieron TS2688 de node y vite/client: typeRoots se resuelve desde el proyecto y los tipos de Vite quedan en src/vite-env.d.ts. La compilación remota de Vercel terminó sin esos errores. Node queda fijado a 24.x; no se cambia automáticamente a otra versión mayor.
+- Se corrigieron TS2688 de node y vite/client: typeRoots se resuelve desde el proyecto y los tipos de Vite quedan en frontend/src/vite-env.d.ts. La compilación remota de Vercel terminó sin esos errores. Node queda fijado a 24.x; no se cambia automáticamente a otra versión mayor.
 - Se corrigió POST /settings/preview para aceptar el contrato documentado `{settings:{...}}`. Tiene una prueba de regresión y se probó en producción sin persistencia ni proveedor IA.
 - Diagnóstico remoto de health GET/HEAD, sesión sin cookies, Auth de Supabase, esquema 002 y acceso de servidor a entries sin filas: aprobado.
 - Recorrido con dos cuentas sintéticas en Supabase y la API pública: aprobado. Incluyó sesiones reales, creación/edición/versionado del diario, denegación de GET/PATCH/DELETE cruzado y comprobación de lectura/escritura cruzada mediante REST de Supabase.
 - Consentimientos independientes, preferencias persistentes, vista previa simulada, perfil manual, pausa repetida con contador único, exportación y borrado con cascada de conversación: aprobados en ese recorrido.
 - Cierre remoto invalida la sesión y assert_live_session; eliminación de cuenta borra su perfil y bloquea acceso posterior. Las dos cuentas creadas para la prueba se eliminaron al terminar. No se tocaron cuentas existentes.
-- 61 pruebas TypeScript aprobadas en un único proceso, comprobación de tipos y pruebas SQL embebidas aprobadas. El runner normal y el build local encontraron spawn EPERM en este entorno Windows; se usó `node --test --test-isolation=none tests/*.test.ts` y la compilación completa se verificó en Vercel.
+- 61 pruebas TypeScript aprobadas en un único proceso, comprobación de tipos y pruebas SQL embebidas aprobadas. El runner normal y el build local encontraron spawn EPERM en este entorno Windows; se usó `node --test --test-isolation=none backend/tests/*.test.ts shared/tests/*.test.ts` y la compilación completa se verificó en Vercel.
 - No se llamó a OpenAI ni se envió correo desde las pruebas. No se cambiaron las claves del usuario.
 
 ## Pendientes para una demo funcional con interfaz

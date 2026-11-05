@@ -4,8 +4,8 @@ import type { Session } from '@supabase/supabase-js';
 import {
   ApiError, clearSession, cookieNames, guardRequest, openReceipt, parse,
   privateRateKey, readConfig, readCookie, readJson, sealReceipt, secureHeaders, setSession,
-} from '../server/security.ts';
-import { aiSchema, entryCreateSchema, entryPatchSchema, loginSchema, profileSchema } from '../server/schemas.ts';
+} from '../src/security.ts';
+import { aiSchema, entryCreateSchema, entryPatchSchema, loginSchema, profileSchema } from '../src/schemas.ts';
 
 const origin = 'https://challenge.example';
 const secret = 'a1'.repeat(32);

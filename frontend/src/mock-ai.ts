@@ -1,5 +1,5 @@
-import type { AIResult, RequestSnapshot, Settings } from './contracts.ts';
-import { DomainError } from './core.ts';
+import type { AIResult, RequestSnapshot, Settings } from '../../shared/contracts.ts';
+import { DomainError } from '../../shared/core.ts';
 
 /** Adaptador determinista; no usa fetch, no analiza el texto y no contiene credenciales. */
 export async function simulateAccompaniment(snapshot: RequestSnapshot, settings: Settings, fail = false): Promise<AIResult> {

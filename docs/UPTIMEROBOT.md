@@ -15,7 +15,7 @@ La URL es el destino que se comprueba, **no una API key**. Iniciar sesión con G
 
 La ruta health respondió 200 durante la revisión. Eso acredita que la función atiende; **no acredita que funcionen Supabase, las sesiones o la IA**. La sesión pública devolvió 503 BACKEND_NOT_CONFIGURED en la misma revisión.
 
-Corrección de diagnóstico: ese 200 corresponde a GET; HEAD devolvió 503 en la versión pública 0.2. La solución gratuita es publicar el handler corregido de `server/app.ts`. Hacer Redeploy de una fuente antigua vuelve a publicar el mismo error: primero deben llegar los archivos actualizados al proyecto GRANDAPTIVE de Vercel. La ruta health de v0.3 funciona sin migración de base ni claves; las otras funciones nuevas sí requieren la migración 002 indicada abajo.
+Corrección de diagnóstico: ese 200 corresponde a GET; HEAD devolvió 503 en la versión pública 0.2. La solución gratuita es publicar el handler corregido de `backend/src/app.ts`. Hacer Redeploy de una fuente antigua vuelve a publicar el mismo error: primero deben llegar los archivos actualizados al proyecto GRANDAPTIVE de Vercel. La ruta health de v0.3 funciona sin migración de base ni claves; las otras funciones nuevas sí requieren la migración 002 indicada abajo.
 
 ## Corregir y publicar el backend antes del monitor de dependencias
 

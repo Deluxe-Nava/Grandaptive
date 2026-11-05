@@ -18,14 +18,14 @@ Núcleo: guardar sin IA → solicitar una operación voluntaria → validar perm
 
 Navegador → mismo origen `/api/v1` → backend TypeScript → Supabase y, sólo cuando se autoriza, OpenAI. El navegador nunca recibe las claves del proveedor ni service role. Las operaciones ordinarias usan el JWT del usuario y RLS. La clave administrativa queda restringida a cuotas, guardado validado de IA, cierre remoto y eliminación de cuenta.
 
-- `server/app.ts`: rutas y orquestación.
-- `server/schemas.ts`: entradas estrictas, tamaños y recibos.
-- `server/security.ts`: cookies, origen, configuración y recibos cifrados.
-- `server/database.ts`: clientes por solicitud y cuotas persistentes.
-- `server/ai.ts`: reglas neuroafirmativas, adaptador real y simulación.
-- `api/index.ts`: entrada Vercel; `server/dev.ts`: servidor local.
-- `supabase/migrations/001_backend.sql`: esquema, permisos, cascadas y transacciones.
-- `src/contracts.ts`: formatos de contenido compartidos.
+- `backend/src/app.ts`: rutas y orquestación.
+- `backend/src/schemas.ts`: entradas estrictas, tamaños y recibos.
+- `backend/src/security.ts`: cookies, origen, configuración y recibos cifrados.
+- `backend/src/database.ts`: clientes por solicitud y cuotas persistentes.
+- `backend/src/ai.ts`: reglas neuroafirmativas, adaptador real y simulación.
+- `api/index.ts`: entrada Vercel; `backend/src/dev.ts`: servidor local.
+- `backend/supabase/migrations/001_backend.sql`: esquema, permisos, cascadas y transacciones.
+- `shared/contracts.ts`: formatos de contenido compartidos.
 - `docs/API-BACKEND.md`: contrato para el frontend posterior.
 
 UUID para identidades, fechas UTC, versiones/revisiones controladas por servidor, JSON y errores sin detalles internos. Cookies HttpOnly; mutaciones con origen exacto y cabecera propia. Contenidos IA tienen tipo y marca de simulación. Las respuestas pendientes incluyen contexto y recibo cifrado de 15 minutos. No se guarda automáticamente contenido IA en nuestras tablas.

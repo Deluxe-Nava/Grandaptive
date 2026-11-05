@@ -38,11 +38,11 @@ Referencia: https://supabase.com/docs/guides/getting-started/api-keys
 
 Objetivo: asegurar los contratos de persistencia. Cubre RF-01, RF-06–RF-13, RF-15, RF-17 técnico y RNF-04/10.
 
-- Ejecutar `supabase/verify-installation.sql` en SQL Editor. Sólo consulta metadatos, sin modificar usuarios ni datos.
+- Ejecutar `backend/supabase/verify-installation.sql` en SQL Editor. Sólo consulta metadatos, sin modificar usuarios ni datos.
 - Si no existe el esquema de GRANDAPTIVE, revisar/aplicar 001_backend.sql y luego 002_prd_monitoring.sql en esa base.
 - Si 001 ya existe y falta 002, aplicar únicamente 002. Si hay instalación parcial o cambios manuales, revisar diferencias antes de repetir cualquier migración. No aplicar a la base de Cipherwatch.
 - 002 normaliza preferencias, agrega feedback de lecturas, contador privado de pausas, lectura del presupuesto y comprobación de dependencias; también exige membresía de demo en RLS. Puede invalidar recibos pendientes por cambio de revisión de preferencias.
-- `supabase/tests/*.sql` usa fixtures de prueba: NO ejecutar esos archivos sobre producción. `npm run test:db` los ejecuta de forma aislada en PostgreSQL embebido.
+- `backend/supabase/tests/*.sql` usa fixtures de prueba: NO ejecutar esos archivos sobre producción. `npm run test:db` los ejecuta de forma aislada en PostgreSQL embebido.
 
 Terminado cuando: verificación sin MISSING/FAIL y RPC backend_readiness devuelve 2. Esta inspección no sustituye las pruebas entre dos cuentas.
 

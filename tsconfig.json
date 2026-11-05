@@ -1,12 +1,33 @@
 {
   "compilerOptions": {
-    "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext", "moduleResolution": "Bundler",
-    "jsx": "react-jsx", "strict": true, "noEmit": true,
-    "allowImportingTsExtensions": true, "verbatimModuleSyntax": true,
-    "skipLibCheck": true, "noUnusedLocals": true, "noUnusedParameters": true,
-    "types": ["node"],
-    "typeRoots": ["./node_modules/@types"]
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
-  "include": ["src", "server", "api", "scripts", "tests", "vite.config.ts"]
+  "include": [
+    "frontend/src",
+    "frontend/vite.config.ts",
+    "backend",
+    "shared",
+    "api"
+  ]
 }

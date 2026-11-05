@@ -1,12 +1,12 @@
-# GRANDAPTIVE · backend del challenge
+# GRANDAPTIVE
 
-Backend TypeScript para diario, perfil, consentimientos, sesiones y OpenAI. Revisión v0.3 del 5 de noviembre de 2026. **Producción y migración 002 conectadas; recorrido con dos cuentas sintéticas aprobado y cuentas eliminadas. El frontend anterior sigue siendo una simulación local y todavía no consume esta API. Faltan CAPTCHA/login interactivo y OpenAI real.**
+Proyecto único con frontend React, backend TypeScript, contratos compartidos y Supabase. **Producción y migración 002 conectadas; recorrido con dos cuentas sintéticas aprobado y cuentas eliminadas. Seis pruebas reales iniciales de OpenAI aprobadas desde el entorno local; su configuración en producción sigue pendiente de verificación. El frontend sigue siendo una simulación local y todavía no consume esta API. CAPTCHA aplazado; el control de acceso permanece activo.**
 
 Objetivo: comprender experiencias, autonomía y bienestar; nunca enseñar a camuflarse mejor. Uso actual: equipo y datos sintéticos. RF-17 tiene una pausa técnica persistente, sin detector, mensajes ni protocolo aprobados por especialistas; no se declara cumplido.
 
 ## Abrir en VS Code
 
-Abrir `grandaptive.code-workspace` o esta carpeta con Archivo → Abrir carpeta. Las tareas están en Terminal → Ejecutar tarea.
+Abrir `grandaptive.code-workspace` en la raíz de este repositorio o esta carpeta con Archivo → Abrir carpeta. La copia local canónica es `C:/Users/erick/Documents/Codex/Grandaptive-publicacion`; el antiguo `outputs/grandaptive-starter` queda como respaldo. Las tareas están en Terminal → Ejecutar tarea. Consultar [estructura y trabajo diario](docs/ESTRUCTURA.md).
 
 ## Leer primero
 
@@ -14,7 +14,7 @@ Prioridad actual: [conexión y pruebas OpenAI](docs/OPENAI-CONEXION.md). CAPTCHA
 
 **Estado actual:** [terminado y pendiente](docs/ESTADO-BACKEND.md). **Siguiente configuración:** [CAPTCHA y cuentas de demo](docs/CAPTCHA-Y-ACCESO.md). Los estados de conexiones fallidas en revisiones anteriores son históricos.
 
-Siguiente etapa: [plan de cierre del backend](docs/CIERRE-BACKEND.md), con dependencias, criterios de terminado y pruebas reales pendientes. Diagnóstico sin escrituras: `npm run check:connections`. Inspección de metadatos en SQL Editor: `supabase/verify-installation.sql` (no confundir con los fixtures de `supabase/tests/`).
+Siguiente etapa: [plan de cierre del backend](docs/CIERRE-BACKEND.md), con dependencias, criterios de terminado y pruebas reales pendientes. Diagnóstico sin escrituras: `npm run check:connections`. Inspección de metadatos en SQL Editor: `backend/supabase/verify-installation.sql` (no confundir con los fixtures de `backend/supabase/tests/`).
 
 Estado más reciente: [revisión contra PRD](docs/REVISION-BACKEND-2026-11-05.md) y [configuración de UptimeRobot](docs/UPTIMEROBOT.md). Aplicar la migración incremental `002_prd_monitoring.sql` después de `001_backend.sql` antes de desplegar v0.3. No se ejecutó SQL remoto durante esta revisión.
 
@@ -47,14 +47,19 @@ Las pruebas usan datos sintéticos y proveedores simulados. `test:db` ejecuta Po
 
 ## Carpetas
 
-- `server/`: rutas, validaciones, cookies, permisos, Supabase y OpenAI.
+- `frontend/`: interfaz, estilos, simulación visual y configuración Vite.
+- `backend/src/`: rutas, validaciones, cookies, permisos, Supabase y OpenAI.
+- `backend/scripts/`: diagnósticos, comprobaciones SQL y pruebas de conexión.
+- `backend/tests/`: pruebas de la API, seguridad e IA.
 - `api/`: entrada Vercel con el mismo handler local.
-- `supabase/migrations/`: esquema, RLS, transacciones, borrado y cuotas.
-- `supabase/tests/` y `tests/`: pruebas SQL y TypeScript.
-- `scripts/`: pruebas PostgreSQL sin cuentas.
-- `src/`: contratos y demo visual existente; integración pendiente.
+- `backend/supabase/migrations/`: esquema, RLS, transacciones, borrado y cuotas.
+- `backend/supabase/tests/`: pruebas SQL aisladas.
+- `shared/`: contratos y reglas compartidas; `shared/tests/` contiene sus pruebas.
 - `docs/`: plan escrito, contrato y puesta en marcha.
+- `docs/prototypes/`: prototipo HTML anterior como referencia.
 - `.vscode/`: tareas para VS Code.
+
+Un único `package.json` y `package-lock.json` en la raíz administran las dependencias. Los comandos se ejecutan desde esa raíz. Vercel mantiene `api/index.ts`, `vercel.json` y la salida `dist/`; su Root Directory debe ser la raíz del repositorio, no `frontend/` ni `backend/`.
 
 ## Presupuesto
 

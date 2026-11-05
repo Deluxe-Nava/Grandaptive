@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { readConfig } from '../server/security.ts';
+import { readConfig } from '../src/security.ts';
 
 // Explicit opt-in: creates two synthetic Auth users and deletes only those users in finally.
 // Never sends email, uses OpenAI, disables CAPTCHA, prints tokens or reads existing user content.

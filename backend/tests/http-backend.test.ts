@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleRequest } from '../server/app.ts';
-import type { Config } from '../server/security.ts';
-import { sealReceipt, openReceipt } from '../server/security.ts';
+import { handleRequest } from '../src/app.ts';
+import type { Config } from '../src/security.ts';
+import { sealReceipt, openReceipt } from '../src/security.ts';
 
 const config: Config = { origin: 'https://challenge.example', supabaseUrl: 'https://database.example', anonKey: 'synthetic-anon-key-only', serviceKey: 'synthetic-service-key-only', secret: 'a1'.repeat(32), production: true, aiMode: 'disabled', aiDailyLimit: 15, aiGlobalDailyLimit: 100, captchaConfigured: true };
 const userId = '10000000-0000-4000-8000-000000000001';

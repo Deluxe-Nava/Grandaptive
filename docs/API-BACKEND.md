@@ -1,6 +1,6 @@
 # Contrato HTTP del backend · v0.3
 
-Implementado en server/app.ts y server/schemas.ts. La demo visual anterior todavía no lo consume. Todos los ejemplos usan datos ficticios.
+Implementado en backend/src/app.ts y backend/src/schemas.ts. La demo visual anterior todavía no lo consume. Todos los ejemplos usan datos ficticios.
 
 Validación posterior del 5/11/2026: recorrido real de datos y sesiones con dos cuentas sintéticas aprobado. POST /settings/preview acepta el objeto anidado documentado; corrección publicada. CAPTCHA/login de navegador y OpenAI real siguen pendientes; ver ESTADO-BACKEND.md y CAPTCHA-Y-ACCESO.md.
 

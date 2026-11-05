@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleRequest } from '../server/app.ts';
-import { readConfig, type Config } from '../server/security.ts';
-import { generateAI } from '../server/ai.ts';
-import { settingsSchema } from '../server/schemas.ts';
+import { handleRequest } from '../src/app.ts';
+import { readConfig, type Config } from '../src/security.ts';
+import { generateAI } from '../src/ai.ts';
+import { settingsSchema } from '../src/schemas.ts';
 
 const config: Config = { origin: 'https://challenge.example', supabaseUrl: 'https://database.example', anonKey: 'synthetic-anon-key-only', serviceKey: 'synthetic-service-key-only', secret: 'a1'.repeat(32), production: true, aiMode: 'disabled', aiDailyLimit: 15, aiGlobalDailyLimit: 100, captchaConfigured: true, monitorToken: 'synthetic-monitor-token-32-characters' };
 

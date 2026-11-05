@@ -1,4 +1,4 @@
-import { readConfig } from '../server/security.ts';
+import { readConfig } from '../src/security.ts';
 
 // Read-only probes. Never print credentials, provider bodies, cookies or user rows.
 let failed = false;

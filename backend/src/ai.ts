@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { AIContent, Operation, Settings } from '../src/contracts.ts';
-import { validateContent } from '../src/core.ts';
+import type { AIContent, Operation, Settings } from '../../shared/contracts.ts';
+import { validateContent } from '../../shared/core.ts';
 import { settingsSchema } from './schemas.ts';
 
 export interface AiInput {

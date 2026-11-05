@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import type { DemoState, ErrorCode, Interpretation, Operation } from '../src/contracts.ts';
-import { assertFresh, assertPermission, createEntry, deleteEntry, DomainError, exportText, freshState, makeSnapshot, ownedEntry, validateContent, validateResult } from '../src/core.ts';
-import { simulateAccompaniment } from '../src/mock-ai.ts';
+import type { DemoState, ErrorCode, Interpretation, Operation } from '../contracts.ts';
+import { assertFresh, assertPermission, createEntry, deleteEntry, DomainError, exportText, freshState, makeSnapshot, ownedEntry, validateContent, validateResult } from '../core.ts';
+import { simulateAccompaniment } from '../../frontend/src/mock-ai.ts';
 
 const operations: Operation[] = ['accompany', 'summary', 'interpret', 'communicate', 'pattern'];
 const hasCode = (code: ErrorCode) => (error: unknown) => error instanceof DomainError && error.code === code;

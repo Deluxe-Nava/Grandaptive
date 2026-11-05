@@ -5,6 +5,7 @@ export const operation = z.enum(['accompany', 'summary', 'interpret', 'communica
 export const category = z.enum(['communication', 'sensory', 'energy', 'social', 'strategies']);
 const text = z.string().min(1).max(8000).refine(value => value.trim().length > 0);
 export const loginSchema = z.object({ email: z.email().max(254), password: z.string().min(1).max(256), captchaToken: z.string().min(1).max(2048) }).strict();
+export const teamLoginSchema = loginSchema.omit({ captchaToken: true });
 export const entryCreateSchema = z.object({ text, availableForAnalysis: z.boolean().default(false) }).strict();
 export const entryPatchSchema = z.object({ expectedVersion: z.number().int().positive(), text: text.optional(), availableForAnalysis: z.boolean().optional() }).strict().refine(value => value.text !== undefined || value.availableForAnalysis !== undefined);
 export const consentsSchema = z.object({ expectedRevision: z.number().int().nonnegative(), aiEnabled: z.boolean(), conversation: z.boolean(), patterns: z.boolean(), profileMemory: z.boolean() }).strict();

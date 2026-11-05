@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateAI, AI_PROMPT_VERSION, type AiInput } from '../server/ai.ts';
-import { freshState } from '../src/core.ts';
+import { generateAI, AI_PROMPT_VERSION, type AiInput } from '../src/ai.ts';
+import { freshState } from '../../shared/core.ts';
 
 function fixture(): AiInput {
   return { operation: 'accompany', entries: [{ id: 'entry-a', version: 1, text: 'Relato ficticio sobre una reunión.' }], settings: freshState().settings, profileItems: [] };

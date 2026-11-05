@@ -1,6 +1,6 @@
-import { generateAI, AI_PROMPT_VERSION, type AiInput } from '../server/ai.ts';
-import { adminDatabase, rateLimit } from '../server/database.ts';
-import { readConfig } from '../server/security.ts';
+import { generateAI, AI_PROMPT_VERSION, type AiInput } from '../src/ai.ts';
+import { adminDatabase, rateLimit } from '../src/database.ts';
+import { readConfig } from '../src/security.ts';
 
 // Explicit CLI-only test. No user content, public endpoint, credentials in output or retries.
 const live = process.argv.includes('--live');

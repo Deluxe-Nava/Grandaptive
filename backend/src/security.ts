@@ -21,6 +21,7 @@ export interface Config {
   aiDailyLimit: number;
   aiGlobalDailyLimit: number;
   captchaConfigured: boolean;
+  teamDemoLogin?: boolean;
   monitorToken?: string;
 }
 
@@ -49,6 +50,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     aiMode: e.AI_MODE, aiKey: env.OPENAI_API_KEY, aiModel: env.OPENAI_MODEL,
     aiDailyLimit: e.AI_DAILY_LIMIT, aiGlobalDailyLimit: e.AI_GLOBAL_DAILY_LIMIT,
     captchaConfigured: env.AUTH_CAPTCHA_ENABLED === 'true',
+    teamDemoLogin: env.AUTH_TEAM_DEMO_LOGIN === 'true',
     monitorToken: env.MONITOR_TOKEN,
   };
 }

@@ -6,7 +6,7 @@ Se ejecutaron seis solicitudes reales con datos sintéticos y gpt-5.4-mini: una 
 
 ## Cierre técnico posterior: 5 de noviembre de 2026
 
-Estado vigente en ESTADO-BACKEND.md. Compilación remota de Vercel sin TS2688, Node 24.x; 61 pruebas aprobadas mediante `node --test --test-isolation=none tests/*.test.ts`, comprobación TypeScript y SQL embebido aprobados. El modo habitual de tests/build local encontró spawn EPERM del entorno Windows; el build completo se comprobó remotamente.
+Estado vigente en ESTADO-BACKEND.md. Compilación remota de Vercel sin TS2688, Node 24.x; 61 pruebas aprobadas mediante `node --test --test-isolation=none backend/tests/*.test.ts shared/tests/*.test.ts`, comprobación TypeScript y SQL embebido aprobados. El modo habitual de tests/build local encontró spawn EPERM del entorno Windows; el build completo se comprobó remotamente.
 
 `npm run check:connections`: todos los checks aprobados, incluida migración 002. `npm run test:live -- --confirm-synthetic-users`: recorrido real aprobado con dos cuentas temporales (sesiones, aislamiento de diario por API/REST, versiones, consentimientos, preferencias/preview, perfil, pausa, exportación, borrado de entrada/conversación, revocación y borrado de cuenta/perfil). Se eliminaron ambas cuentas y sus datos de prueba. No hubo llamadas OpenAI ni correos.
 

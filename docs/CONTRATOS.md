@@ -8,7 +8,7 @@ Base: PRD v0.1, secciones 8–16 y decisiones pendientes 20.3. Este documento pr
 
 **Límite verificable:** la simulación demuestra estados, navegación y contratos. No acredita aislamiento entre cuentas, autorización servidor, borrado remoto, confidencialidad del navegador ni detección de riesgo. RF-17 sólo tiene un parámetro técnico `safetyPaused` en helpers de permisos y pruebas; no existe control de activación en la interfaz, conversación persistida, detector clínico ni protocolo aprobado.
 
-**Implementado en este corte:** diario local con borrador, guardado, búsqueda, edición versionada y borrado; ajustes de acompañamiento; interruptores de las tres capas; simulación determinista únicamente de `accompany`; descarte por cambios de permisos/configuración/fuentes; guardado separado de interpretación simulada; exportación TXT y reinicio local. `summary`, `interpret`, `communicate` y `pattern` tienen tipos y validadores estructurales, pero no flujo de interfaz ni adaptador de generación. `ProfileItem` es un contrato sin módulo de perfil operativo. No hay API, sesiones, servidor, llamadas a un proveedor ni eventos de seguridad registrados. La fuente de verdad de los nombres ejecutables es `src/contracts.ts`; los apartados marcados como futuros son propuestas adicionales.
+**Implementado en este corte:** diario local con borrador, guardado, búsqueda, edición versionada y borrado; ajustes de acompañamiento; interruptores de las tres capas; simulación determinista únicamente de `accompany`; descarte por cambios de permisos/configuración/fuentes; guardado separado de interpretación simulada; exportación TXT y reinicio local. `summary`, `interpret`, `communicate` y `pattern` tienen tipos y validadores estructurales, pero no flujo de interfaz ni adaptador de generación. `ProfileItem` es un contrato sin módulo de perfil operativo. No hay API, sesiones, servidor, llamadas a un proveedor ni eventos de seguridad registrados. La fuente de verdad de los nombres ejecutables es `shared/contracts.ts`; los apartados marcados como futuros son propuestas adicionales.
 
 ## 1. Convenciones y responsabilidades
 
@@ -21,7 +21,7 @@ Base: PRD v0.1, secciones 8–16 y decisiones pendientes 20.3. Este documento pr
 
 ## 2. Entidades mínimas y estados
 
-Los campos existentes siguientes corresponden a `src/contracts.ts`. Las entidades futuras se distinguen expresamente.
+Los campos existentes siguientes corresponden a `shared/contracts.ts`. Las entidades futuras se distinguen expresamente.
 
 | Entidad | Campos mínimos / regla |
 |---|---|

@@ -8,7 +8,7 @@ export interface InterfaceSettings { textScale: number; contrast: 'standard' | '
 export const defaultInterface: InterfaceSettings = { textScale: 100, contrast: 'standard', density: 'comfortable', reducedMotion: true, notifications: false, startSection: 'diary' };
 export const defaultSettings: Settings = { tone: 'neutral', length: 'brief', listenOnly: true, followUp: false, questionStyle: 'direct', useExamples: false, literalLanguage: true, modality: 'text', settingsRevision: 0 };
 export const defaultConsents: Consents = { aiEnabled: false, conversation: false, patterns: false, profileMemory: false, authorizationRevision: 0 };
-export const categories: Record<Category, string> = { communication: 'Comunicación', sensory: 'Necesidades sensoriales', energy: 'Energía y bienestar', social: 'Experiencias sociales', strategies: 'Estrategias personales' };
+export const categories: Record<Category, string> = { communication: 'Communication', sensory: 'Sensory needs', energy: 'Energy and well-being', social: 'Social experiences', strategies: 'Personal strategies' };
 export class ApiError extends Error { code: string; status: number; constructor(message: string, code: string, status: number) { super(message); this.code = code; this.status = status; } }
 let refresh: Promise<Response> | undefined;
 
@@ -30,12 +30,12 @@ export async function api<T>(path: string, method = 'GET', body?: unknown, signa
     }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new ApiError(data.error?.message ?? 'No se pudo completar la operación. Puedes volver a intentarlo.', data.error?.code ?? 'REQUEST_FAILED', response.status);
+      throw new ApiError(data.error?.message ?? 'The action could not be completed. You can try again.', data.error?.code ?? 'REQUEST_FAILED', response.status);
     }
     return (path === '/export' ? await response.text() : await response.json()) as T;
   } catch (error) {
     if (error instanceof ApiError || signal?.aborted) throw error;
-    throw new ApiError('No pudimos conectar. Lo que estás escribiendo se conserva; vuelve a intentarlo cuando tengas conexión.', 'CONNECTION_FAILED', 0);
+    throw new ApiError('We could not connect. What you are writing is kept; try again when you have a connection.', 'CONNECTION_FAILED', 0);
   } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
 }
 
@@ -54,4 +54,4 @@ export function applyInterface(settings: InterfaceSettings) {
   root.dataset.density = settings.density;
   root.dataset.motion = settings.reducedMotion ? 'reduced' : 'standard';
 }
-export function dateLabel(date: string) { return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(date)); }
+export function dateLabel(date: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(date)); }

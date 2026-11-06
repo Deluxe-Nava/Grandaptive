@@ -35,14 +35,14 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     AI_GLOBAL_DAILY_LIMIT: z.coerce.number().int().min(1).max(2000).default(100),
   });
   const parsed = schema.safeParse(env);
-  if (!parsed.success) throw new ApiError(503, 'BACKEND_NOT_CONFIGURED', 'El backend todavía no está configurado.');
+  if (!parsed.success) throw new ApiError(503, 'BACKEND_NOT_CONFIGURED', 'The backend is not configured yet.');
   const e = parsed.data;
   const origin = new URL(e.APP_ORIGIN);
   const database = new URL(e.SUPABASE_URL);
   if (origin.origin !== e.APP_ORIGIN || origin.username || origin.password || database.username || database.password ||
     (production && (origin.protocol !== 'https:' || database.protocol !== 'https:')) ||
     (!production && !['https:', 'http:'].includes(origin.protocol))) {
-    throw new ApiError(503, 'BACKEND_NOT_CONFIGURED', 'Revisa la configuración del backend.');
+    throw new ApiError(503, 'BACKEND_NOT_CONFIGURED', 'Check the backend configuration.');
   }
   return {
     origin: e.APP_ORIGIN, supabaseUrl: e.SUPABASE_URL, anonKey: e.SUPABASE_ANON_KEY,
@@ -56,27 +56,27 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
 }
 
 export function authorizeMonitor(request: Request, expected: string | undefined): void {
-  if (!expected || expected.length < 32) throw new ApiError(503, 'MONITOR_NOT_CONFIGURED', 'Monitoreo de dependencias no configurado.');
+  if (!expected || expected.length < 32) throw new ApiError(503, 'MONITOR_NOT_CONFIGURED', 'Dependency monitoring is not configured.');
   const supplied = request.headers.get('authorization') ?? '';
   const hash = (value: string) => createHash('sha256').update(value).digest();
-  if (!timingSafeEqual(hash(supplied), hash(`Bearer ${expected}`))) throw new ApiError(401, 'MONITOR_UNAUTHORIZED', 'No autorizado.');
+  if (!timingSafeEqual(hash(supplied), hash(`Bearer ${expected}`))) throw new ApiError(401, 'MONITOR_UNAUTHORIZED', 'Not authorized.');
 }
 
 export function guardRequest(request: Request, origin: string): void {
   const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
   const suppliedOrigin = request.headers.get('origin');
-  if (suppliedOrigin && suppliedOrigin !== origin) throw new ApiError(403, 'ORIGIN_REJECTED', 'Origen de la solicitud no autorizado.');
-  if (unsafe && suppliedOrigin !== origin) throw new ApiError(403, 'ORIGIN_REQUIRED', 'Falta verificar el origen de la solicitud.');
-  if (request.headers.get('sec-fetch-site') === 'cross-site') throw new ApiError(403, 'CROSS_SITE_REJECTED', 'Solicitud externa no autorizada.');
-  if (unsafe && request.headers.get('x-requested-with') !== 'grandaptive') throw new ApiError(403, 'CSRF_REJECTED', 'Falta la protección de la solicitud.');
+  if (suppliedOrigin && suppliedOrigin !== origin) throw new ApiError(403, 'ORIGIN_REJECTED', 'Request origin not authorized.');
+  if (unsafe && suppliedOrigin !== origin) throw new ApiError(403, 'ORIGIN_REQUIRED', 'The request origin could not be verified.');
+  if (request.headers.get('sec-fetch-site') === 'cross-site') throw new ApiError(403, 'CROSS_SITE_REJECTED', 'External request not authorized.');
+  if (unsafe && request.headers.get('x-requested-with') !== 'grandaptive') throw new ApiError(403, 'CSRF_REJECTED', 'The request protection is missing.');
 }
 
 export async function readJson(request: Request, limit = 32768): Promise<unknown> {
-  if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') throw new ApiError(415, 'JSON_REQUIRED', 'Envía el formulario como JSON.');
+  if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') throw new ApiError(415, 'JSON_REQUIRED', 'Send the form as JSON.');
   const declared = request.headers.get('content-length');
-  if (declared && Number(declared) > limit) throw new ApiError(413, 'BODY_TOO_LARGE', 'El contenido es demasiado largo.');
+  if (declared && Number(declared) > limit) throw new ApiError(413, 'BODY_TOO_LARGE', 'The content is too long.');
   const reader = request.body?.getReader();
-  if (!reader) throw new ApiError(400, 'INVALID_JSON', 'El formulario está vacío.');
+  if (!reader) throw new ApiError(400, 'INVALID_JSON', 'The form is empty.');
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
@@ -84,19 +84,19 @@ export async function readJson(request: Request, limit = 32768): Promise<unknown
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > limit) { await reader.cancel(); throw new ApiError(413, 'BODY_TOO_LARGE', 'El contenido es demasiado largo.'); }
+      if (size > limit) { await reader.cancel(); throw new ApiError(413, 'BODY_TOO_LARGE', 'The content is too long.'); }
       chunks.push(value);
     }
     return JSON.parse(Buffer.concat(chunks).toString('utf8'));
   } catch (error) {
     if (error instanceof ApiError) throw error;
-    throw new ApiError(400, 'INVALID_JSON', 'El formulario no tiene un formato válido.');
+    throw new ApiError(400, 'INVALID_JSON', 'The form does not have a valid format.');
   } finally { reader.releaseLock(); }
 }
 
 export function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const parsed = schema.safeParse(value);
-  if (!parsed.success) throw new ApiError(422, 'INVALID_INPUT', 'Revisa los campos y la longitud del formulario.');
+  if (!parsed.success) throw new ApiError(422, 'INVALID_INPUT', 'Check the form fields and length.');
   return parsed.data;
 }
 
@@ -107,10 +107,10 @@ export function cookieNames(production: boolean) {
 
 export function readCookie(request: Request, name: string): string | undefined {
   const values = (request.headers.get('cookie') ?? '').split(';').map(item => item.trim()).filter(item => item.startsWith(`${name}=`));
-  if (values.length > 1) throw new ApiError(400, 'INVALID_COOKIE', 'La sesión no tiene un formato válido.');
+  if (values.length > 1) throw new ApiError(400, 'INVALID_COOKIE', 'The session does not have a valid format.');
   if (!values[0]) return undefined;
   try { return decodeURIComponent(values[0].slice(name.length + 1)); }
-  catch { throw new ApiError(400, 'INVALID_COOKIE', 'La sesión no tiene un formato válido.'); }
+  catch { throw new ApiError(400, 'INVALID_COOKIE', 'The session does not have a valid format.'); }
 }
 
 function sessionCookie(name: string, value: string, age: number, secure: boolean): string {
@@ -160,5 +160,5 @@ export function openReceipt(token: string, secret: string): unknown {
     decipher.setAAD(Buffer.from('grandaptive-ai-receipt-v1'));
     decipher.setAuthTag(data.subarray(12, 28));
     return JSON.parse(Buffer.concat([decipher.update(data.subarray(28)), decipher.final()]).toString('utf8'));
-  } catch { throw new ApiError(422, 'INVALID_RECEIPT', 'La respuesta guardable no es válida o fue modificada.'); }
+  } catch { throw new ApiError(422, 'INVALID_RECEIPT', 'The saveable response is invalid or was modified.'); }
 }

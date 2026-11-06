@@ -1,6 +1,6 @@
 # GRANDAPTIVE
 
-Proyecto único con frontend React, backend TypeScript, contratos compartidos y Supabase. **Producción y migración 002 conectadas; recorrido con dos cuentas sintéticas aprobado y cuentas eliminadas. Seis pruebas reales iniciales de OpenAI aprobadas desde el entorno local; su configuración en producción sigue pendiente de verificación. El frontend sigue siendo una simulación local y todavía no consume esta API. CAPTCHA aplazado; el control de acceso permanece activo.**
+Proyecto único con frontend React, backend TypeScript, contratos compartidos y Supabase. **Estado al 5/11/2026: producción en https://grandaptive.vercel.app con frontend conectado a la API (sesión, diario, asistente, perfil, ajustes y privacidad). Login de demo por invitación activo (`AUTH_TEAM_DEMO_LOGIN=true`, cuentas con `app_metadata.challenge_member=true`); registro público cerrado y CAPTCHA aplazado. IA real (OpenAI) activa en producción con cuotas; las cinco operaciones se verificaron con relatos ficticios. Migración 002 aplicada.**
 
 Objetivo: comprender experiencias, autonomía y bienestar; nunca enseñar a camuflarse mejor. Uso actual: equipo y datos sintéticos. RF-17 tiene una pausa técnica persistente, sin detector, mensajes ni protocolo aprobados por especialistas; no se declara cumplido.
 
@@ -43,11 +43,11 @@ npm run test:db
 npm run audit
 ```
 
-Las pruebas usan datos sintéticos y proveedores simulados. `test:db` ejecuta PostgreSQL embebido con Auth de prueba; no crea cuentas ni gasta créditos. `npm run dev` abre la demo visual anterior en http://127.0.0.1:5173; el proxy `/api` está preparado para la integración futura.
+Las pruebas usan datos sintéticos y proveedores simulados. `test:db` ejecuta PostgreSQL embebido con Auth de prueba; no crea cuentas ni gasta créditos. `npm run dev` abre el frontend en http://127.0.0.1:5173 y envía `/api` al backend local de `npm run dev:api` (puerto 3001). Con `AI_MODE=mock` en `.env.local` se prueba el asistente sin gastar OpenAI.
 
 ## Carpetas
 
-- `frontend/`: interfaz, estilos, simulación visual y configuración Vite.
+- `frontend/`: interfaz React conectada a la API, estilos y configuración Vite.
 - `backend/src/`: rutas, validaciones, cookies, permisos, Supabase y OpenAI.
 - `backend/scripts/`: diagnósticos, comprobaciones SQL y pruebas de conexión.
 - `backend/tests/`: pruebas de la API, seguridad e IA.
@@ -63,9 +63,9 @@ Un único `package.json` y `package-lock.json` en la raíz administran las depen
 
 ## Presupuesto
 
-$500 MXN totales declarados; compra prevista de USD 5 para OpenAI API, no realizada aquí. No se pagó ni contrató ningún servicio. IA inicial desactivada. Límites: 15 solicitudes por persona/día, 100 por proyecto/día y 100 intentos reales acumulados por proyecto.
+$500 MXN totales declarados; compra prevista de USD 5 para OpenAI API, no realizada aquí. No se pagó ni contrató ningún servicio. Producción usa `AI_MODE=openai`; consultar el consumo en `GET /api/v1/usage/ai` con sesión. Límites: 15 solicitudes por persona/día, 100 por proyecto/día y 100 intentos reales acumulados por proyecto.
 
-Claves sólo en servidor; nunca variables `VITE_*`. Las pruebas locales no certifican ausencia total de vulnerabilidades, WCAG ni seguridad clínica. La demo visual guarda en localStorage: usar exclusivamente datos ficticios hasta integrar sesiones y limpieza de datos locales.
+Claves sólo en servidor; nunca variables `VITE_*`. Las pruebas locales no certifican ausencia total de vulnerabilidades, WCAG ni seguridad clínica. El frontend sólo guarda borradores en localStorage y los limpia al cerrar sesión; usar exclusivamente datos ficticios. Si una respuesta de IA no pasa los filtros, los logs de Vercel muestran `[ia] respuesta descartada: operación=… motivo=…` sin contenido del usuario.
 
 
 ## Contexto del equipo

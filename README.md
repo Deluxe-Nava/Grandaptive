@@ -1,83 +1,94 @@
-# GRANDAPTIVE
+# GRANDAPTIVE · Your way
 
-Proyecto único con frontend React, backend TypeScript, contratos compartidos y Supabase. **Estado al 5/11/2026: producción en https://grandaptive.vercel.app con frontend conectado a la API (sesión, diario, asistente, perfil, ajustes y privacidad). Login de demo por invitación activo (`AUTH_TEAM_DEMO_LOGIN=true`, cuentas con `app_metadata.challenge_member=true`); registro público cerrado y CAPTCHA aplazado. IA real (OpenAI) activa en producción con cuotas; las cinco operaciones se verificaron con relatos ficticios. Migración 002 aplicada.**
+**Live demo:** https://grandaptive.vercel.app
 
-Objetivo: comprender experiencias, autonomía y bienestar; nunca enseñar a camuflarse mejor. Uso actual: equipo y datos sintéticos. RF-17 tiene una pausa técnica persistente, sin detector, mensajes ni protocolo aprobados por especialistas; no se declara cumplido.
+A neuro-affirming journal with optional AI that helps autistic students understand their experiences, recognize their needs, and find their own words to communicate them — without being taught to mask better.
 
-## Abrir en VS Code
+Built by five students from **Tecnológico de Monterrey, Campus Querétaro** for the **North American AI Challenge for Neurodiverse Learning**, with **Surfeando la Neurodiversidad** as our Challenge Partner.
 
-Abrir `grandaptive.code-workspace` en la raíz de este repositorio o esta carpeta con Archivo → Abrir carpeta. La copia local canónica es `C:/Users/erick/Documents/Codex/Grandaptive-publicacion`; el antiguo `outputs/grandaptive-starter` queda como respaldo. Las tareas están en Terminal → Ejecutar tarea. Consultar [estructura y trabajo diario](docs/ESTRUCTURA.md).
+> This is a prototype for an educational challenge. It is not therapy, diagnosis, or an emergency service. The demo uses fictional data only.
 
-## Leer primero
+## Demo access
 
-Prioridad actual: [conexión y pruebas OpenAI](docs/OPENAI-CONEXION.md). CAPTCHA aplazado por el usuario; el control de login permanece activo.
+Sign-up is closed: the demo is invitation-only so that no real personal stories are stored. Access credentials for evaluators are shared privately with the challenge organizers — they are intentionally not published in this repository. If you need access, contact the team.
 
-**Estado actual:** [terminado y pendiente](docs/ESTADO-BACKEND.md). **Siguiente configuración:** [CAPTCHA y cuentas de demo](docs/CAPTCHA-Y-ACCESO.md). Los estados de conexiones fallidas en revisiones anteriores son históricos.
+## The problem
 
-Siguiente etapa: [plan de cierre del backend](docs/CIERRE-BACKEND.md), con dependencias, criterios de terminado y pruebas reales pendientes. Diagnóstico sin escrituras: `npm run check:connections`. Inspección de metadatos en SQL Editor: `backend/supabase/verify-installation.sql` (no confundir con los fixtures de `backend/supabase/tests/`).
+Many autistic people practice social camouflage (masking): hiding or adjusting their natural behavior to fit social expectations. It can help with belonging and safety, but sustained under pressure it is linked to exhaustion, difficulty recognizing one's own needs, and overload. There are few spaces to understand one's own experience without being evaluated or corrected.
 
-Estado más reciente: [revisión contra PRD](docs/REVISION-BACKEND-2026-11-05.md) y [configuración de UptimeRobot](docs/UPTIMEROBOT.md). Aplicar la migración incremental `002_prd_monitoring.sql` después de `001_backend.sql` antes de desplegar v0.3. No se ejecutó SQL remoto durante esta revisión.
+**Guiding principle:** the technology adapts to the person; it never turns social adaptation into an obligation. Unmasking is not a goal — each person decides when, how, and with whom to express themselves.
 
-1. [Plan detallado](docs/PLAN-BACKEND.md): alcance, módulos, responsables, entregas y pendientes.
-2. [Configuración y despliegue](docs/DESPLIEGUE.md): cuentas, variables, OpenAI y publicación.
-3. [Contrato HTTP](docs/API-BACKEND.md): rutas para conectar el frontend después.
-4. [Verificación](docs/VERIFICACION.md): evidencia local y pruebas externas pendientes.
+## What the MVP does
 
-Los documentos iniciales PLAN-48H, DECISIONES y CONTRATOS conservan el contexto del simulador; la propuesta técnica actual está en los documentos anteriores.
+| Module | What you can do |
+|---|---|
+| **My journal** (core) | Write freely and save **without AI**. Edit with versioning, search, and choose which entries are available for pattern exploration. |
+| **My assistant** (optional AI) | *Keep me company* · *Summarize what I wrote* · *Understand a situation* (three columns: **What happened · Possible readings · What we don't know**) · *Find my words* (2–3 editable phrasings by context: school, family, work, friendship) · *Explore a possible pattern*. Every question can be skipped; you can switch to *Just listen* or *Change topic*. |
+| **My profile** | Write your own needs and preferences in five categories. AI pattern suggestions are only added if **you** accept them; each item shows its origin ("I wrote this" / "Suggested by AI and accepted by me"). Rejected patterns are not proposed again. |
+| **Settings** | Interface: text size, contrast, spacing, reduced motion. Support style: tone, length, question style, just listen, follow-up questions. **Your explicit settings always override the AI.** |
+| **Privacy** | Separate, revocable AI permissions (main switch, conversation, patterns, profile memory). Data export, deletion with a preview of everything that will be removed, sign-out on all devices, and account deletion. |
 
-## Ejecutar
+## Responsible AI
 
-Node.js 24.15 o superior compatible. En esta carpeta:
+- **No AI by default.** Saving an entry never calls the AI; every AI feature requires explicit, per-layer consent.
+- **Uncertainty, not authority.** The AI separates what was reported from hypotheses and unknowns, never states other people's emotions or intentions as facts, and never diagnoses.
+- **Server-side safety filters** (English and Spanish) reject responses that assert third parties' feelings, offer false reassurance, diagnose, push masking ("make eye contact", "act normal"), or break *Just listen* — and require tentative language in pattern suggestions.
+- **The user decides.** Nothing is saved to the profile automatically; any reading can be marked "doesn't fit me"; any conversation can be paused.
+- **Minimal data.** Only the selected entries and authorized context are sent to the AI provider. API keys live only on the server. Daily and lifetime usage limits protect the budget.
+
+## Tech stack
+
+- **Frontend:** React 19 + TypeScript + Vite (`frontend/`)
+- **Backend:** TypeScript HTTP API on Vercel Functions (`backend/src/`, entry point `api/index.ts`), Zod validation, HttpOnly session cookies, origin checks, encrypted, expiring AI receipts
+- **Database & auth:** Supabase (Postgres with Row Level Security, Supabase Auth) — migrations in `backend/supabase/migrations/`
+- **AI:** OpenAI Responses API with strict JSON schemas (`backend/src/ai.ts`); `AI_MODE=mock` for a free simulated mode
+- **Shared contracts:** `shared/`
+
+## Run locally
+
+Requires Node.js 24.
 
 ```sh
 npm ci
-npm run dev:api
+cp .env.example .env.local   # fill in Supabase keys; AI_MODE=mock avoids OpenAI costs
+npm run dev:api              # backend on http://127.0.0.1:3001
+npm run dev                  # frontend on http://127.0.0.1:5173
 ```
 
-Sin credenciales, sólo `/api/v1/health` funciona; rutas privadas fallan de forma controlada. Copiar `.env.example` a `.env.local` y seguir DESPLIEGUE.md para conectar Supabase.
+Checks:
 
 ```sh
+npm run check    # TypeScript
+npm test         # 69 tests (API, security, AI filters, shared rules)
+npm run test:db  # SQL isolation tests on embedded PostgreSQL
 npm run build
-npm test
-npm run test:db
-npm run audit
 ```
 
-Las pruebas usan datos sintéticos y proveedores simulados. `test:db` ejecuta PostgreSQL embebido con Auth de prueba; no crea cuentas ni gasta créditos. `npm run dev` abre el frontend en http://127.0.0.1:5173 y envía `/api` al backend local de `npm run dev:api` (puerto 3001). Con `AI_MODE=mock` en `.env.local` se prueba el asistente sin gastar OpenAI.
+## Repository structure
 
-## Carpetas
+```text
+frontend/   React interface, styles, Vite config
+backend/    API (src/), tests, scripts, Supabase migrations and SQL tests
+shared/     Contracts and rules shared by frontend and backend
+api/        Vercel entry point
+docs/       Internal planning and technical documentation (in Spanish)
+```
 
-- `frontend/`: interfaz React conectada a la API, estilos y configuración Vite.
-- `backend/src/`: rutas, validaciones, cookies, permisos, Supabase y OpenAI.
-- `backend/scripts/`: diagnósticos, comprobaciones SQL y pruebas de conexión.
-- `backend/tests/`: pruebas de la API, seguridad e IA.
-- `api/`: entrada Vercel con el mismo handler local.
-- `backend/supabase/migrations/`: esquema, RLS, transacciones, borrado y cuotas.
-- `backend/supabase/tests/`: pruebas SQL aisladas.
-- `shared/`: contratos y reglas compartidas; `shared/tests/` contiene sus pruebas.
-- `docs/`: plan escrito, contrato y puesta en marcha.
-- `docs/prototypes/`: prototipo HTML anterior como referencia.
-- `.vscode/`: tareas para VS Code.
+## Known limitations
 
-Un único `package.json` y `package-lock.json` en la raíz administran las dependencias. Los comandos se ejecutan desde esa raíz. Vercel mantiene `api/index.ts`, `vercel.json` y la salida `dist/`; su Root Directory debe ser la raíz del repositorio, no `frontend/` ni `backend/`.
+- Invitation-only demo with fictional data; not yet validated with participants.
+- The safety pause (RF-17) is technical only; crisis protocols require specialist review.
+- Pattern rejection blocks the exact pattern key, not every paraphrase.
+- Voice input, the interactive social-situations lab, and a browser extension are part of the future vision, not this MVP.
 
-## Presupuesto
-
-$500 MXN totales declarados; compra prevista de USD 5 para OpenAI API, no realizada aquí. No se pagó ni contrató ningún servicio. Producción usa `AI_MODE=openai`; consultar el consumo en `GET /api/v1/usage/ai` con sesión. Límites: 15 solicitudes por persona/día, 100 por proyecto/día y 100 intentos reales acumulados por proyecto.
-
-Claves sólo en servidor; nunca variables `VITE_*`. Las pruebas locales no certifican ausencia total de vulnerabilidades, WCAG ni seguridad clínica. El frontend sólo guarda borradores en localStorage y los limpia al cerrar sesión; usar exclusivamente datos ficticios. Si una respuesta de IA no pasa los filtros, los logs de Vercel muestran `[ia] respuesta descartada: operación=… motivo=…` sin contenido del usuario.
-
-
-## Contexto del equipo
-
-Grandaptive is being developed for the **North American AI Challenge for Neurodiverse Learning** by five students from **Tecnológico de Monterrey, Campus Querétaro**, working with **Surfeando la Neurodiversidad** as our Challenge Partner.
-
-Our goal is to support autistic students in understanding their experiences, expressing their needs, and navigating transitions while encouraging mutual understanding with peers and mentors.
-
-## Equipo
+## Team
 
 - Abril Odette Jiménez Sánchez
 - Arturo Sebastián García Soto
 - Emma Valentina Molina Hernández
 - Erick Domínguez Navarrete
 - Naoto Santiago Salvador Masuoka
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -152,10 +152,10 @@ test('exportación separa el texto original de la interpretación simulada y se�
   state.entries[0]!.version = 2;
   state.entries[0]!.text = 'Texto ficticio corregido por la persona.';
   const exported = exportText(state);
-  assert.match(exported, /SOLO DATOS FICTICIOS/);
-  assert.match(exported, /No contiene resultados de una IA real/);
+  assert.match(exported, /FICTIONAL DATA ONLY/);
+  assert.match(exported, /Contains no real AI output/);
   assert.ok(exported.includes(state.entries[0]!.text));
-  assert.match(exported, /INTERPRETACIÓN SIMULADA · fuente v1 · basada en versión anterior/);
+  assert.match(exported, /SIMULATED INTERPRETATION · source v1 · based on an earlier version/);
   assert.match(exported, /Resumen ficticio separado/);
 });
 

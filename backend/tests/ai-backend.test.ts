@@ -165,3 +165,24 @@ test('patrón acepta distintas formas tentativas y rechaza afirmaciones', async 
     await assert.rejects(pattern(hypothesis), /cumpla las reglas/, hypothesis);
   }
 });
+
+test('interpretar acepta incertidumbre sobre terceros y rechaza afirmarla', async () => {
+  const input = { ...fixture(), operation: 'interpret' as const };
+  const base = { type: 'interpret', reportedFacts: ['Comentaste algo sobre un videojuego.', 'Nadie respondió.'], possibleReadings: ['Quizá el ruido impidió escucharlo.', 'Puede que no tuvieran nada que añadir.'], unknowns: ['Qué pensaron tus compañeros.'], abstentionReason: null };
+  const interpret = (extra: object) => generateAI(input, live, fake(() => response({ ...base, ...extra })));
+  for (const unknowns of [['No sabemos si alguno está molesto contigo.'], ['No es seguro que nadie lo notara.'], ['Si alguien está enojado contigo, no aparece en tu relato.']]) {
+    assert.equal((await interpret({ unknowns })).content.type, 'interpret', unknowns[0]);
+  }
+  for (const possibleReadings of [['Tus compañeros están molestos contigo.', 'Quizá fue el ruido.'], ['No te preocupes, seguro que nadie lo notó.', 'Quizá fue el ruido.']]) {
+    await assert.rejects(interpret({ possibleReadings }), /cumpla las reglas/, possibleReadings[0]);
+  }
+});
+
+test('interpretar admite tres listas completas sin superar el límite de palabras breve', async () => {
+  const input = { ...fixture(), operation: 'interpret' as const };
+  const sentence = 'Quizá el ruido del patio hizo difícil escuchar a todas las personas al mismo tiempo durante el recreo.';
+  const content = { type: 'interpret', reportedFacts: [sentence, sentence], possibleReadings: [sentence, sentence, sentence], unknowns: [sentence, sentence, sentence] };
+  assert.equal((await generateAI(input, live, fake(() => response({ ...content, abstentionReason: null })))).content.type, 'interpret');
+  const tooLong = { ...content, unknowns: Array(4).fill(sentence + ' ' + sentence) };
+  await assert.rejects(generateAI(input, live, fake(() => response({ ...tooLong, abstentionReason: null }))), /cumpla las reglas/);
+});

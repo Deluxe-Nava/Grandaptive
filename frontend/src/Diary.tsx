@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, dateLabel, readDraft, writeDraft, type Entry, type ProfileItem, type SavedReading } from './api.ts';
 import { Confirm, ContentCard, Empty, Icon, Toggle } from './components.tsx';
 
@@ -13,6 +13,13 @@ export function Diary({ userId, initialEntry, entries, reload, select, aiEnabled
   const [editing, setEditing] = useState(false); const [edit, setEdit] = useState('');
   const [readings, setReadings] = useState<SavedReading[]>([]); const [readingsError, setReadingsError] = useState('');
   const [deletion, setDeletion] = useState<{ entryId: string; profileItems: ProfileItem[]; interpretationIds: string[] } | null>(null);
+  const detail = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!opened || !detail.current) return;
+    const reduced = document.documentElement.dataset.motion === 'reduced' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    detail.current.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    detail.current.focus({ preventScroll: true });
+  }, [opened?.id]);
   const visible = results ?? [...entries, ...more.filter(x => !entries.some(e => e.id === x.id))];
   useEffect(() => {
     if (!opened) { setReadings([]); return; }
@@ -38,7 +45,7 @@ export function Diary({ userId, initialEntry, entries, reload, select, aiEnabled
       <div className="editor-footer"><span className="muted">{draft.length}/8000 · {storage ? 'Borrador en este dispositivo' : 'No se pudo guardar el borrador local'}</span><button className="primary" disabled={busy || !draft.trim()} onClick={() => void run(save, 'Entrada guardada sin llamar a la IA.')}>Guardar entrada</button></div>
       <details><summary>Sobre tu borrador</summary><p>Se conserva en este navegador para que puedas volver. Se elimina al cerrar sesión desde la app. Evita dejar la sesión abierta en un dispositivo compartido.</p><button disabled={busy} onClick={() => changeDraft('')}>Descartar borrador</button></details>
     </section>
-    {opened && <section className="card entry-detail"><div className="section-heading"><div><span className="eyebrow">LO ESCRIBISTE TÚ</span><h2>Tu registro</h2><time dateTime={opened.createdAt}>{dateLabel(opened.createdAt)} · versión {opened.version}</time></div><button onClick={() => { setOpened(null); setEditing(false); }}>Cerrar registro</button></div>
+    {opened && <section ref={detail} tabIndex={-1} aria-label="Tu registro" className="card entry-detail"><div className="section-heading"><div><span className="eyebrow">LO ESCRIBISTE TÚ</span><h2>Tu registro</h2><time dateTime={opened.createdAt}>{dateLabel(opened.createdAt)} · versión {opened.version}</time></div><button onClick={() => { setOpened(null); setEditing(false); }}>Cerrar registro</button></div>
       {editing ? <><label>Editar texto original<textarea rows={7} value={edit} maxLength={8000} onChange={e => { setEdit(e.target.value); writeDraft(userId+':edit:'+opened.id, e.target.value); }}/></label><div className="actions"><button disabled={busy} onClick={() => setEditing(false)}>Volver sin guardar</button><button className="primary" disabled={busy || !edit.trim()} onClick={() => void run(saveEdit, 'Cambios guardados. Las interpretaciones anteriores conservan su versión.')}>Guardar cambios</button></div></> : <><p className="preserve original-text">{opened.text}</p><div className="actions"><button disabled={busy} onClick={() => { setEdit(readDraft(userId+':edit:'+opened.id) || opened.text); setEditing(true); }}>Editar</button>{aiEnabled && <button onClick={() => select(opened)}><Icon name="assistant"/>Explorar con IA</button>}<button className="danger-text" disabled={busy} onClick={() => void run(async () => setDeletion(await api('/entries/'+opened.id+'/deletion-plan')))}>Eliminar</button></div></>}
       <Toggle label="Disponible para explorar patrones" description="Sólo se analizará cuando tú lo pidas y hayas autorizado esa capa de IA." checked={opened.availableForAnalysis} disabled={busy} onChange={value => void run(async () => { const {entry} = await api<{entry:Entry}>('/entries/'+opened.id, 'PATCH', { expectedVersion: opened.version, availableForAnalysis: value }); setOpened(entry); await reload(); }, 'Permiso de esta entrada actualizado.')}/>
       <h3>Interpretaciones guardadas</h3>{readingsError && <p role="alert">{readingsError}</p>}{readings.length === 0 && !readingsError && <p className="muted">No hay interpretaciones guardadas para esta entrada.</p>}{readings.map(item => <article className="ai-saved" key={item.id}><div className="section-heading"><span className="badge">{item.simulation ? 'Simulación · no es IA real' : 'Generado por IA'}</span><time dateTime={item.created_at}>{dateLabel(item.created_at)}</time></div>{item.basedOnPreviousVersion && <p className="notice">Basada en una versión anterior de tu entrada.</p>}<ContentCard content={item.content} rejected={item.rejected_readings} onReject={index => void run(async () => { const { interpretation } = await api<{interpretation: SavedReading}>('/interpretations/'+item.id+'/readings/'+index, 'PATCH', { fits: false }); setReadings(old => old.map(x => x.id === item.id ? {...x, rejected_readings: interpretation.rejected_readings} : x)); }, 'La lectura quedó marcada como «no encaja».')}/><button disabled={busy} className="text-button danger-text" onClick={() => void run(async () => { await api('/interpretations/'+item.id, 'DELETE', {}); setReadings(old => old.filter(x => x.id !== item.id)); }, 'Interpretación eliminada. Tu texto original se conserva.')}>Eliminar interpretación</button></article>)}

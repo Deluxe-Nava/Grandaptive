@@ -146,3 +146,22 @@ test('continuación incluye sólo el turno previo validado como datos; cambiar t
     }));
   }
 });
+
+test('patrón acepta distintas formas tentativas y rechaza afirmaciones', async () => {
+  const input = { ...fixture(), operation: 'pattern' as const };
+  const pattern = (hypothesis: string) => generateAI(input, live, fake(() => response({ type: 'pattern', hypothesis, category: 'energy', patternKey: 'ruido_cansancio' })));
+  for (const hypothesis of [
+    'Posible patrón: después de reuniones con mucho ruido aparece cansancio.',
+    'Quizá el ruido en reuniones se relaciona con tu cansancio.',
+    'Puede que las reuniones con mucho ruido te dejen sin energía.',
+    'Es probable que el ruido en reuniones aumente tu cansancio.',
+    'Las reuniones con mucho ruido parecen relacionarse con cansancio.',
+    'En varios registros el cansancio aparece tras reuniones; podrías explorar si se relacionan.',
+  ]) {
+    const result = await pattern(hypothesis);
+    assert.equal(result.content.type, 'pattern', hypothesis);
+  }
+  for (const hypothesis of ['Siempre te agotas en las reuniones.', 'Las reuniones te agotan.', 'Tu cansancio viene del ruido; imposible negarlo.']) {
+    await assert.rejects(pattern(hypothesis), /cumpla las reglas/, hypothesis);
+  }
+});

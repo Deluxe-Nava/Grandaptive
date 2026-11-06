@@ -20,12 +20,12 @@ const timedFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal
 
 export function dataOrThrow<T>(result: { data: T; error: { code?: string } | null }): NonNullable<T> {
   if (result.error) {
-    if (result.error.code === 'P0002') throw new ApiError(404, 'NOT_FOUND', 'No se encontró el recurso.');
-    if (['42501', 'PGRST301', 'PGRST302'].includes(result.error.code ?? '')) throw new ApiError(403, 'ACCESS_DENIED', 'No tienes acceso a esta operación.');
-    if (['23503', '23514', '22023', 'P0001', '40001', '23505'].includes(result.error.code ?? '')) throw new ApiError(409, 'STATE_CONFLICT', 'Los datos cambiaron o la operación no es válida. Actualiza y vuelve a intentarlo.');
-    throw new ApiError(503, 'DATABASE_UNAVAILABLE', 'No se pudo completar la operación. Conserva tu borrador y vuelve a intentarlo.');
+    if (result.error.code === 'P0002') throw new ApiError(404, 'NOT_FOUND', 'The resource was not found.');
+    if (['42501', 'PGRST301', 'PGRST302'].includes(result.error.code ?? '')) throw new ApiError(403, 'ACCESS_DENIED', 'You do not have access to this action.');
+    if (['23503', '23514', '22023', 'P0001', '40001', '23505'].includes(result.error.code ?? '')) throw new ApiError(409, 'STATE_CONFLICT', 'The data changed or the action is not valid. Refresh and try again.');
+    throw new ApiError(503, 'DATABASE_UNAVAILABLE', 'The action could not be completed. Keep your draft and try again.');
   }
-  if (result.data === null || result.data === undefined) throw new ApiError(404, 'NOT_FOUND', 'No se encontró el recurso.');
+  if (result.data === null || result.data === undefined) throw new ApiError(404, 'NOT_FOUND', 'The resource was not found.');
   return result.data;
 }
 
@@ -33,5 +33,5 @@ export type UserDatabase = ReturnType<typeof userDatabase>;
 
 export async function rateLimit(config: Config, key: string, limit: number, seconds: number): Promise<void> {
   const allowed = dataOrThrow(await adminDatabase(config).rpc('consume_rate_limit', { p_key: privateRateKey(config.secret, key), p_limit: limit, p_window_seconds: seconds }));
-  if (!allowed) throw new ApiError(429, 'RATE_LIMITED', 'Se alcanzó el límite temporal. Puedes seguir usando los datos ya cargados y reintentar más tarde.');
+  if (!allowed) throw new ApiError(429, 'RATE_LIMITED', 'A temporary limit was reached. You can keep using the data already loaded and try again later.');
 }

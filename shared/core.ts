@@ -14,26 +14,26 @@ export function freshState(): DemoState {
 }
 
 export function createEntry(text: string, ownerId: string): Entry {
-  if (!text.trim()) throw new Error('Escribe algo antes de guardar.');
-  if (text.length > 8000) throw new Error('Esta demostración admite hasta 8 000 caracteres por entrada.');
+  if (!text.trim()) throw new Error('Write something before saving.');
+  if (text.length > 8000) throw new Error('This demo allows up to 8,000 characters per entry.');
   const now = new Date().toISOString();
   return { id: crypto.randomUUID(), ownerId, text, version: 1, createdAt: now, updatedAt: now, availableForAnalysis: false };
 }
 
 export function ownedEntry(entries: Entry[], entryId: string, actorId: string): Entry {
   const entry = entries.find(item => item.id === entryId && item.ownerId === actorId);
-  if (!entry) throw new DomainError('NOT_FOUND', 'No se encontró esa entrada.');
+  if (!entry) throw new DomainError('NOT_FOUND', 'That entry was not found.');
   return entry;
 }
 
 export function assertPermission(operation: Operation, consents: Consents, entries: Entry[], safetyPaused = false): void {
   if (!consents.aiEnabled || (operation === 'pattern' ? !consents.patterns : !consents.conversation)) {
-    throw new DomainError('CONSENT_REQUIRED', 'Esta operación no tiene permiso de IA.');
+    throw new DomainError('CONSENT_REQUIRED', 'This action does not have AI permission.');
   }
   if (operation === 'pattern' && (!entries.length || entries.some(entry => !entry.availableForAnalysis))) {
-    throw new DomainError('CONSENT_REQUIRED', 'Solo se pueden analizar entradas autorizadas.');
+    throw new DomainError('CONSENT_REQUIRED', 'Only authorized entries can be analyzed.');
   }
-  if (safetyPaused) throw new DomainError('SAFETY_PAUSED', 'Las interpretaciones de esta conversación están suspendidas.');
+  if (safetyPaused) throw new DomainError('SAFETY_PAUSED', 'Interpretations in this conversation are paused.');
 }
 
 export function makeSnapshot(operation: Operation, entries: Entry[], consents: Consents, settings: Settings, safetyPaused = false): RequestSnapshot {
@@ -47,11 +47,11 @@ export function makeSnapshot(operation: Operation, entries: Entry[], consents: C
 
 export function assertFresh(snapshot: RequestSnapshot, state: DemoState, safetyPaused = false): void {
   if (snapshot.authorizationRevision !== state.consents.authorizationRevision || snapshot.settingsRevision !== state.settings.settingsRevision) {
-    throw new DomainError('STALE_REQUEST', 'Los permisos o las preferencias cambiaron. Solicita una respuesta nueva si lo deseas.');
+    throw new DomainError('STALE_REQUEST', 'Permissions or preferences changed. Request a new response if you want.');
   }
   const entries = snapshot.sources.map(source => {
     const entry = state.entries.find(item => item.id === source.entryId && item.version === source.entryVersion);
-    if (!entry) throw new DomainError('STALE_REQUEST', 'La entrada cambió o fue eliminada. La respuesta se descartó.');
+    if (!entry) throw new DomainError('STALE_REQUEST', 'The entry changed or was deleted. The response was discarded.');
     return entry;
   });
   assertPermission(snapshot.operation, state.consents, entries, safetyPaused);
@@ -63,7 +63,7 @@ function isStringArray(value: unknown): value is string[] {
 
 /** Control estructural básico. No es detector semántico ni validación clínica. */
 export function validateContent(value: unknown, operation: Operation, settings: Settings): AIContent {
-  const fail = () => { throw new DomainError('INVALID_OUTPUT', 'La respuesta no cumple el formato acordado.'); };
+  const fail = () => { throw new DomainError('INVALID_OUTPUT', 'The response does not match the agreed format.'); };
   if (!value || typeof value !== 'object') return fail();
   const content = value as Record<string, unknown>;
   if (content.type !== operation) return fail();
@@ -91,10 +91,10 @@ export function validateContent(value: unknown, operation: Operation, settings: 
 }
 
 export function validateResult(result: AIResult, snapshot: RequestSnapshot, settings: Settings): AIResult {
-  if (result.schemaVersion !== '0.1' || result.requestId !== snapshot.requestId) throw new DomainError('INVALID_OUTPUT', 'La respuesta no corresponde a la solicitud.');
+  if (result.schemaVersion !== '0.1' || result.requestId !== snapshot.requestId) throw new DomainError('INVALID_OUTPUT', 'The response does not match the request.');
   const sameSources = (a: Source[], b: Source[]) => a.length === b.length && a.every((source, i) => source.entryId === b[i]?.entryId && source.entryVersion === b[i]?.entryVersion);
   if (!sameSources(result.context.sources, snapshot.sources) || result.context.profileItemIds.length > 0) {
-    throw new DomainError('INVALID_OUTPUT', 'La respuesta cita contexto no autorizado por este adaptador.');
+    throw new DomainError('INVALID_OUTPUT', 'The response cites context not authorized by this adapter.');
   }
   validateContent(result.content, snapshot.operation, settings);
   return result;
@@ -105,14 +105,14 @@ export function deleteEntry(state: DemoState, id: string): DemoState {
 }
 
 export function exportText(state: DemoState): string {
-  return ['PROTOTIPO LOCAL · SOLO DATOS FICTICIOS', 'No contiene resultados de una IA real.', '',
+  return ['LOCAL PROTOTYPE · FICTIONAL DATA ONLY', 'Contains no real AI output.', '',
     ...state.entries.flatMap(entry => [
-      `ENTRADA ${entry.id} · versión ${entry.version} · ${entry.createdAt}`, entry.text, '',
+      `ENTRY ${entry.id} · version ${entry.version} · ${entry.createdAt}`, entry.text, '',
       ...state.interpretations.filter(item => item.entryId === entry.id).flatMap(item => [
-        `INTERPRETACIÓN SIMULADA · fuente v${item.entryVersion}${item.entryVersion !== entry.version ? ' · basada en versión anterior' : ''}`,
+        `SIMULATED INTERPRETATION · source v${item.entryVersion}${item.entryVersion !== entry.version ? ' · based on an earlier version' : ''}`,
         JSON.stringify(item.content, null, 2), '',
       ]),
     ]),
-    'PREFERENCIAS', JSON.stringify(state.settings, null, 2), 'PERMISOS DE DEMOSTRACIÓN', JSON.stringify(state.consents, null, 2),
+    'PREFERENCES', JSON.stringify(state.settings, null, 2), 'DEMO PERMISSIONS', JSON.stringify(state.consents, null, 2),
   ].join('\n');
 }
